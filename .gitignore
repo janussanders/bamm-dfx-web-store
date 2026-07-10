@@ -14,3 +14,5 @@ frontend/public/assets/*.png
 .dfx/
 canister_ids.json
 !canister_ids.json.example
+# Operator-only PEMs / local secrets — never commit (see docs/dfx-ci-identity.md)
+.secrets/

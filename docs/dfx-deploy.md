@@ -32,7 +32,14 @@ dfx deploy --network local
 
 ## GitHub Actions → live test URL
 
-1. Repo → Settings → Secrets → add **`DFX_IDENTITY_PEM`** (PEM of a cycles-funded identity that can create canisters on IC).
+1. Install dfx locally (once), then run the secret helper (creates gitignored `.secrets/` PEM + uploads `DFX_IDENTITY_PEM`):
+
+```bash
+./scripts/setup-dfx-ci-secret.sh
+```
+
+Details + **how to fund cycles**: [dfx-ci-identity.md](dfx-ci-identity.md).
+
 2. Actions → **Deploy dfx (IC)** → Run workflow:
    - `network`: `ic`
    - `deploy`: `true`
@@ -44,7 +51,7 @@ Agentic URL: https://<frontend-canister-id>.icp0.io
 
 4. Open that URL → Internet Identity → claim Super Admin → configure Stripe / RESEND / PEM / installers (DDR-002).
 
-Until secrets exist, run the workflow with `deploy=false` to verify **build-only** CI.
+Until the secret exists and the identity is funded, run the workflow with `deploy=false` to verify **build-only** CI.
 
 ## Hard rules
 

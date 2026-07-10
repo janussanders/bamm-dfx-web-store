@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "dfx": "0.24.3",
+  "dfx": "0.32.0",
   "canisters": {
     "backend": {
       "type": "custom",
