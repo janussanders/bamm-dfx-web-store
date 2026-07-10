@@ -57,4 +57,4 @@ Never put Stripe/RESEND/license PEM in Actions — Admin UI after bootstrap (DDR
 2. II login → Super Admin claim  
 3. Configure Stripe (test), RESEND, PEM, installers  
 4. Smoke: trial email, test checkout, Admin entitlements  
-5. Commit generated `canister_ids.json` when ready to pin IDs (or keep local-only per `.gitignore`)
+5. Commit generated `canister_ids.json` when ready to pin IDs (done for first IC create: backend `5z2v5-…`, frontend `5qz6b-…`)

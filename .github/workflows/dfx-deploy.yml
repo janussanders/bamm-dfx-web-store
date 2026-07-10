@@ -114,11 +114,27 @@ jobs:
           dfx identity get-principal
           dfx cycles balance --network "$DFX_NETWORK" || true
           # Default create can request more than a fresh top-up; pin deposits to fit ~1.6 TC.
+          # canister_ids.json pins IDs after first create — create is a no-op when already allocated.
           dfx canister create backend --network "$DFX_NETWORK" --identity ci --with-cycles 700000000000 || true
           dfx canister create frontend --network "$DFX_NETWORK" --identity ci --with-cycles 700000000000 || true
-          dfx deploy --network "$DFX_NETWORK" --yes --identity ci
           BACKEND_ID=$(dfx canister id backend --network "$DFX_NETWORK")
           FRONTEND_ID=$(dfx canister id frontend --network "$DFX_NETWORK")
+          # Inject live canister config before dfx rebuilds/uploads the assets canister.
+          BACKEND_ID="$BACKEND_ID" FRONTEND_ID="$FRONTEND_ID" python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          data = {
+              "backend_host": "https://icp-api.io",
+              "backend_canister_id": os.environ["BACKEND_ID"],
+              "project_id": "bamm-dfx-web-store",
+              "ii_derivation_origin": f"https://{os.environ['FRONTEND_ID']}.icp0.io",
+              "storage_gateway_url": "undefined",
+          }
+          path = Path("src/frontend/env.json")
+          path.write_text(json.dumps(data, indent=2) + "\n")
+          print(path.read_text())
+          PY
+          dfx deploy --network "$DFX_NETWORK" --yes --identity ci
           {
             echo "## BAMM dfx Web Store deploy"
             echo "- **Network:** $DFX_NETWORK"

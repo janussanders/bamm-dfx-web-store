@@ -18,7 +18,7 @@
       "type": "assets",
       "source": ["src/frontend/dist"],
       "dependencies": ["backend"],
-      "workspace": "src/frontend"
+      "build": "pnpm --dir src/frontend build"
     }
   },
   "defaults": {

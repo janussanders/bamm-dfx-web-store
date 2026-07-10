@@ -12,7 +12,6 @@ frontend/public/assets/*.png
 .cache/
 .caffeine-release-*-notes.md
 .dfx/
-canister_ids.json
-!canister_ids.json.example
+# canister_ids.json is committed to pin IC IDs for the dfx parallel path
 # Operator-only PEMs / local secrets — never commit (see docs/dfx-ci-identity.md)
 .secrets/

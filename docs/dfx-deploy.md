@@ -66,5 +66,5 @@ Until the secret exists and the identity is funded, run the workflow with `deplo
 | DDR-003 Blob spike / mops build | Done |
 | `dfx.json` | Added |
 | CI build + optional deploy | Added |
-| Live IC URL | **Pending** operator `DFX_IDENTITY_PEM` + first deploy |
-| ≥1 MiB installer round-trip | Pending after first deploy |
+| Live IC URL | Canisters created — backend `5z2v5-…`, frontend `5qz6b-…`; redeploy after pnpm assets build fix |
+| ≥1 MiB installer round-trip | Pending after first green deploy |
