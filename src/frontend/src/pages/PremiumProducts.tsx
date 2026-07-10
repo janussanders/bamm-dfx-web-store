@@ -1,4 +1,5 @@
 import type { ShoppingItem } from "@/backend";
+import { ExternalBlob } from "@/backend";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -451,7 +452,9 @@ export default function PremiumProducts() {
                               {feature.image && (
                                 <div className="mt-4 rounded-lg overflow-hidden bg-muted/30">
                                   <img
-                                    src={feature.image.getDirectURL()}
+                                    src={ExternalBlob.fromBytes(
+                                      feature.image,
+                                    ).getDirectURL()}
                                     alt={feature.name}
                                     className="w-full h-auto object-contain"
                                     loading="lazy"

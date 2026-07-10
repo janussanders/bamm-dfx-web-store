@@ -121,8 +121,10 @@ export default function DownloadSuccess() {
           : await downloadWindows.mutateAsync();
 
       if (result.__kind__ === "ok") {
-        const bytes = await result.ok.file.getBytes();
-        const blob = new Blob([bytes], { type: result.ok.mimeType });
+        const bytes = result.ok.file;
+        const blob = new Blob([Uint8Array.from(bytes)], {
+          type: result.ok.mimeType,
+        });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;

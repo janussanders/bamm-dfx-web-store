@@ -9,19 +9,6 @@ type http_header =
    name: text;
    value: text;
  };
-type _ImmutableObjectStorageRefillResult = 
- record {
-   success: opt bool;
-   topped_up_amount: opt nat;
- };
-type _ImmutableObjectStorageRefillInformation = record {
-                                                  proposed_top_up_amount:
-                                                   opt nat;};
-type _ImmutableObjectStorageCreateCertificateResult = 
- record {
-   blob_hash: text;
-   method: text;
- };
 type UserSubmission = 
  record {
    downloadCount: nat;
@@ -176,7 +163,7 @@ type LicenseFeature =
    description: text;
    featureType: text;
    id: text;
-   image: opt ExternalBlob;
+   image: opt blob;
    isActive: bool;
    isPremium: bool;
    licenseReferenceName: text;
@@ -203,12 +190,11 @@ type InstallerDownloadResult =
  variant {
    err: text;
    ok: record {
-         file: ExternalBlob;
+         file: blob;
          fileName: text;
          mimeType: text;
        };
  };
-type ExternalBlob = blob;
 type EntitlementWorkflowStep = 
  record {
    message: text;
@@ -296,15 +282,6 @@ type ActivateEntitlementRequest =
    machineDigest: text;
  };
 service : {
-  _immutableObjectStorageBlobsAreLive: (hashes: vec blob) -> (vec bool) query;
-  _immutableObjectStorageBlobsToDelete: () -> (vec blob) query;
-  _immutableObjectStorageConfirmBlobDeletion: (blobs: vec blob) -> ();
-  _immutableObjectStorageCreateCertificate: (blobHash: text) ->
-   (_ImmutableObjectStorageCreateCertificateResult);
-  _immutableObjectStorageRefillCashier: (refillInformation:
-   opt _ImmutableObjectStorageRefillInformation) ->
-   (_ImmutableObjectStorageRefillResult);
-  _immutableObjectStorageUpdateGatewayPrincipals: () -> ();
   _initializeAccessControl: () -> ();
   activateEntitlement: (request: ActivateEntitlementRequest) ->
    (variant {
@@ -423,7 +400,7 @@ service : {
     }) query;
   getMacInstallerFile: () ->
    (opt record {
-          file: ExternalBlob;
+          file: blob;
           fileName: text;
           mimeType: text;
         }) query;
@@ -436,13 +413,13 @@ service : {
   getSuperAdminClaimCode: () -> (text) query;
   getTransactionLogs: () -> (vec TransactionLog) query;
   getTrialEligibleProductNames: () -> (vec text) query;
-  getTrialLicenseFile: () -> (opt ExternalBlob) query;
+  getTrialLicenseFile: () -> (opt blob) query;
   getTrialLicensePayload: (email: text) -> (text);
   getUserProfile: (user: principal) -> (opt UserProfile) query;
   getUserSubmissions: () -> (vec UserSubmission) query;
   getWindowsInstallerFile: () ->
    (opt record {
-          file: ExternalBlob;
+          file: blob;
           fileName: text;
           mimeType: text;
         }) query;
@@ -521,10 +498,10 @@ service : {
       ok;
     });
   updateResendServiceName: (serviceName: text) -> ();
-  uploadFeatureImage: (featureId: text, image: ExternalBlob) -> ();
-  uploadMacInstaller: (file: ExternalBlob, fileName: text) -> (bool);
-  uploadPrivateKeyFile: (file: ExternalBlob) -> ();
+  uploadFeatureImage: (featureId: text, image: blob) -> ();
+  uploadMacInstaller: (file: blob, fileName: text) -> (bool);
+  uploadPrivateKeyFile: (file: blob) -> ();
   uploadPrivateKeyPem: (pem: text) -> ();
-  uploadTrialLicenseFile: (file: ExternalBlob) -> ();
-  uploadWindowsInstaller: (file: ExternalBlob, fileName: text) -> (bool);
+  uploadTrialLicenseFile: (file: blob) -> ();
+  uploadWindowsInstaller: (file: blob, fileName: text) -> (bool);
 }

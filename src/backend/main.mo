@@ -2,8 +2,6 @@ import AccessControl "mo:caffeineai-authorization/access-control";
 import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
 import Stripe "mo:caffeineai-stripe/stripe";
 import OutCall "mo:caffeineai-http-outcalls/outcall";
-import Storage "mo:caffeineai-object-storage/Storage";
-import MixinObjectStorage "mo:caffeineai-object-storage/Mixin";
 import Map "mo:core/Map";
 import Principal "mo:core/Principal";
 import Text "mo:core/Text";
@@ -58,8 +56,7 @@ actor BAMM {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  // Object storage
-  include MixinObjectStorage();
+  // DDR-003: Caffeine MixinObjectStorage removed — files stored as Motoko Blob (Option A lite).
 
   // ── RBAC Admin Role Types ────────────────────────────────────────────────
 
@@ -178,7 +175,7 @@ actor BAMM {
     isPremium : Bool;
     isActive : Bool;
     priceInCents : Nat;
-    image : ?Storage.ExternalBlob;
+    image : ?Blob;
     featureType : Text;
     // Canonical name used in RSA license payloads — must match BAMM desktop app validation.
     // If empty, falls back to `name`. Set this to one of the six canonical names:
@@ -294,7 +291,7 @@ actor BAMM {
 
   public type InstallerDownloadResult = {
     #ok : {
-      file : Storage.ExternalBlob;
+      file : Blob;
       fileName : Text;
       mimeType : Text;
     };
@@ -351,7 +348,7 @@ actor BAMM {
   };
 
   // 30-day trial license file reference
-  var trialLicenseFile : ?Storage.ExternalBlob = null;
+  var trialLicenseFile : ?Blob = null;
 
   // Stripe configuration
   var stripeConfig : ?Stripe.StripeConfiguration = null;
@@ -359,7 +356,7 @@ actor BAMM {
   // RSA private key — PEM stored on-canister for server-side signing only (never queryable).
   var privateKeyPem : ?Text = null;
   // Legacy object-storage reference; retained for migration visibility only.
-  var privateKeyFile : ?Storage.ExternalBlob = null;
+  var privateKeyFile : ?Blob = null;
 
   // submitUser abuse controls (0.S5)
   var submitUserLastAttempt = Map.empty<Text, Int>();
@@ -379,13 +376,13 @@ actor BAMM {
 
   // Installer files with metadata
   var macInstallerFile : ?{
-    file : Storage.ExternalBlob;
+    file : Blob;
     fileName : Text;
     mimeType : Text;
   } = null;
 
   var windowsInstallerFile : ?{
-    file : Storage.ExternalBlob;
+    file : Blob;
     fileName : Text;
     mimeType : Text;
   } = null;
@@ -1716,14 +1713,14 @@ actor BAMM {
   };
 
   // 30-day trial license file management
-  public shared ({ caller }) func uploadTrialLicenseFile(file : Storage.ExternalBlob) : async () {
+  public shared ({ caller }) func uploadTrialLicenseFile(file : Blob) : async () {
     if (not (isAdmin(caller))) {
       Runtime.trap("Unauthorized: Only admins can upload trial license files");
     };
     trialLicenseFile := ?file;
   };
 
-  public query ({ caller }) func getTrialLicenseFile() : async ?Storage.ExternalBlob {
+  public query ({ caller }) func getTrialLicenseFile() : async ?Blob {
     if (not (isAdmin(caller))) {
       Runtime.trap("Unauthorized: Only admins can access trial license files");
     };
@@ -1824,7 +1821,7 @@ actor BAMM {
   };
 
   // Deprecated: legacy object-storage upload. Admins should use uploadPrivateKeyPem instead.
-  public shared ({ caller }) func uploadPrivateKeyFile(file : Storage.ExternalBlob) : async () {
+  public shared ({ caller }) func uploadPrivateKeyFile(file : Blob) : async () {
     if (not (isAdmin(caller))) {
       Runtime.trap("Unauthorized: Only admins can upload private key files");
     };
@@ -2256,7 +2253,7 @@ actor BAMM {
     recipientEmail : Text;
     expirationDate : Int;
     generatedTimestamp : Int;
-  }, _keyFile : Storage.ExternalBlob) : async Text {
+  }, _keyFile : Blob) : async Text {
     let expiresIso = msToIso(payload.expirationDate);
     let generatedAtIso = nowNsToIso(payload.generatedTimestamp);
     let payloadJson = buildLicensePayloadJson(payload.features, payload.recipientEmail, expiresIso, generatedAtIso);
@@ -3579,7 +3576,7 @@ actor BAMM {
   };
 
   // Mac installer file management
-  public shared ({ caller }) func uploadMacInstaller(file : Storage.ExternalBlob, fileName : Text) : async Bool {
+  public shared ({ caller }) func uploadMacInstaller(file : Blob, fileName : Text) : async Bool {
     if (not (isAdmin(caller))) {
       Runtime.trap("Unauthorized: Only admins can upload Mac installer files");
     };
@@ -3599,7 +3596,7 @@ actor BAMM {
   };
 
   public query ({ caller }) func getMacInstallerFile() : async ?{
-    file : Storage.ExternalBlob;
+    file : Blob;
     fileName : Text;
     mimeType : Text;
   } {
@@ -3644,7 +3641,7 @@ actor BAMM {
   };
 
   // Windows installer file management
-  public shared ({ caller }) func uploadWindowsInstaller(file : Storage.ExternalBlob, fileName : Text) : async Bool {
+  public shared ({ caller }) func uploadWindowsInstaller(file : Blob, fileName : Text) : async Bool {
     if (not (isAdmin(caller))) {
       Runtime.trap("Unauthorized: Only admins can upload Windows installer files");
     };
@@ -3664,7 +3661,7 @@ actor BAMM {
   };
 
   public query ({ caller }) func getWindowsInstallerFile() : async ?{
-    file : Storage.ExternalBlob;
+    file : Blob;
     fileName : Text;
     mimeType : Text;
   } {
@@ -4627,7 +4624,7 @@ actor BAMM {
   // because enhanced orthogonal persistence does not use preupgrade/postupgrade.
 
   // Upload feature image (admin-only)
-  public shared ({ caller }) func uploadFeatureImage(featureId : Text, image : Storage.ExternalBlob) : async () {
+  public shared ({ caller }) func uploadFeatureImage(featureId : Text, image : Blob) : async () {
     if (not (isAdmin(caller))) {
       Runtime.trap("Unauthorized: Only admins can upload feature images");
     };

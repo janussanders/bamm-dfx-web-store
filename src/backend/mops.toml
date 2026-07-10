@@ -9,6 +9,7 @@ args = [ "--release" ]
 [canisters.backend]
 main = "main.mo"
 
+# DDR-003: Blob-only baseline (synced from scripts/check-stable/backend-02c10d9.most)
 [canisters.backend.check-stable]
 path = "caffeine-check-stable.most"
 
@@ -26,7 +27,6 @@ args = [ "--default-persistent-actors", "--actor-idl=system-idl", "--implicit-pa
 core = "2.5.0"
 base = "0.16.0"
 caffeineai-authorization = "0.1.1"
-caffeineai-object-storage = "0.1.2"
 caffeineai-stripe = "0.1.1"
 caffeineai-http-outcalls = "0.1.1"
 sha2 = "0.1.14"

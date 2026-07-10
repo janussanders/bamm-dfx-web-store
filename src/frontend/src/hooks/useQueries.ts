@@ -2,7 +2,6 @@ import type {
   EmailAutomationSettings,
   EmailLog,
   EmailSendResult,
-  ExternalBlob,
   InstallerDownloadResult,
   LicenseRecord,
   LicenseRequest,
@@ -15,6 +14,7 @@ import type {
   LicenseBundle as _LicenseBundle,
   LicenseFeature as _LicenseFeature,
 } from "@/backend";
+import { ExternalBlob } from "@/backend";
 
 // Extend LicenseFeature with optional featureType for Features Management
 export type LicenseFeature = _LicenseFeature & { featureType?: string };
@@ -539,7 +539,8 @@ export function useGetTrialLicenseFile() {
     queryKey: ["trialLicenseFile"],
     queryFn: async () => {
       if (!actor) return null;
-      return actor.getTrialLicenseFile();
+      const bytes = await actor.getTrialLicenseFile();
+      return bytes ? ExternalBlob.fromBytes(bytes) : null;
     },
     enabled: !!actor && !isFetching,
   });
@@ -552,7 +553,7 @@ export function useUploadTrialLicenseFile() {
   return useMutation({
     mutationFn: async (file: ExternalBlob) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.uploadTrialLicenseFile(file);
+      return actor.uploadTrialLicenseFile(await file.getBytes());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["trialLicenseFile"] });
@@ -572,7 +573,13 @@ export function useGetMacInstaller() {
     queryKey: ["macInstaller"],
     queryFn: async () => {
       if (!actor) return null;
-      return actor.getMacInstallerFile();
+      const result = await actor.getMacInstallerFile();
+      if (!result) return null;
+      return {
+        file: ExternalBlob.fromBytes(result.file),
+        fileName: result.fileName,
+        mimeType: result.mimeType,
+      };
     },
     enabled: !!actor && !isFetching,
   });
@@ -588,7 +595,7 @@ export function useUploadMacInstaller() {
       fileName,
     }: { file: ExternalBlob; fileName: string }) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.uploadMacInstaller(file, fileName);
+      return actor.uploadMacInstaller(await file.getBytes(), fileName);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["macInstaller"] });
@@ -608,7 +615,13 @@ export function useGetWindowsInstaller() {
     queryKey: ["windowsInstaller"],
     queryFn: async () => {
       if (!actor) return null;
-      return actor.getWindowsInstallerFile();
+      const result = await actor.getWindowsInstallerFile();
+      if (!result) return null;
+      return {
+        file: ExternalBlob.fromBytes(result.file),
+        fileName: result.fileName,
+        mimeType: result.mimeType,
+      };
     },
     enabled: !!actor && !isFetching,
   });
@@ -624,7 +637,7 @@ export function useUploadWindowsInstaller() {
       fileName,
     }: { file: ExternalBlob; fileName: string }) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.uploadWindowsInstaller(file, fileName);
+      return actor.uploadWindowsInstaller(await file.getBytes(), fileName);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["windowsInstaller"] });
@@ -915,7 +928,7 @@ export function useUploadFeatureImage() {
       image,
     }: { featureId: string; image: ExternalBlob }) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.uploadFeatureImage(featureId, image);
+      return actor.uploadFeatureImage(featureId, await image.getBytes());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["licenseFeatures"] });

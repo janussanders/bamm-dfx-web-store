@@ -1,5 +1,5 @@
 // Version: 3.0.0
-type AdminRecord__455002387 =
+type AdminRecord__862792469 =
   {
     email : Text;
     id : Text;
@@ -9,15 +9,15 @@ type AdminRecord__455002387 =
     lastLogin : ?Int;
     name : Text;
     principal : ?Principal;
-    role : AdminRole__343775848;
-    status : AdminStatus__721558826;
+    role : AdminRole__550079881;
+    status : AdminStatus__931994384;
     tempPasswordExpiry : ?Int;
     tempPasswordHash : ?Text
   };
-type AdminRole__343775848 =
+type AdminRole__550079881 =
   {#administrator; #featuresManager; #licenseGenerator; #superAdmin};
-type AdminStatus__721558826 = {#active; #deactivated; #pending};
-type AuditEntry__251122708 =
+type AdminStatus__931994384 = {#active; #deactivated; #pending};
+type AuditEntry__849002978 =
   {
     action : Text;
     actorEmail : Text;
@@ -26,7 +26,7 @@ type AuditEntry__251122708 =
     target : Text;
     timestamp : Int
   };
-type CustomerEntitlement__734041086 =
+type CustomerEntitlement__774222852 =
   {
     activatedAtNs : ?Int;
     activationDeadlineNs : Int;
@@ -37,12 +37,12 @@ type CustomerEntitlement__734041086 =
     features : [Text];
     machineBindingDigest : ?Text;
     purchasedAtNs : Int;
-    status : EntitlementStatus__987798663;
+    status : EntitlementStatus__878110642;
     updatedAtNs : Int
   };
 type Data__80296667<K, V> =
   {var count : Nat__1040412405; kvs : [var ?(K, V)]};
-type EmailLog__24701380 =
+type EmailLog__577630079 =
   {
     deliveryStatus : Text;
     email : Text;
@@ -50,15 +50,14 @@ type EmailLog__24701380 =
     sentTimestamp : Int;
     subject : Text
   };
-type EntitlementStatus__987798663 =
+type EntitlementStatus__878110642 =
   {#activated; #expired; #forfeited; #pending_activation};
-type EntitlementWorkflowStep__582212868 =
+type EntitlementWorkflowStep__319498791 =
   {message : Text; step : Text; stripeSessionId : ?Text; timestamp : Int};
-type ExternalBlob__671167343 = Blob;
 type Internal__41346355<K, V> =
   {children : [var ?Node__1000929467<K, V>]; data : Data__80296667<K, V>};
 type Leaf__712614010<K, V> = {data : Data__80296667<K, V>};
-type LicenseBundle__799487712 =
+type LicenseBundle__824924899 =
   {
     alaCarteSumCents : Nat;
     badge : Text;
@@ -74,19 +73,19 @@ type LicenseBundle__799487712 =
     savingsCents : Nat;
     sortOrder : Nat
   };
-type LicenseFeature__1020672901 =
+type LicenseFeature__846268300 =
   {
     description : Text;
     featureType : Text;
     id : Text;
-    image : ?ExternalBlob__671167343;
+    image : ?Blob;
     isActive : Bool;
     isPremium : Bool;
     licenseReferenceName : Text;
     name : Text;
     priceInCents : Nat
   };
-type LicenseRecord__1060796829 =
+type LicenseRecord__257743349 =
   {
     deliveryStatus : Text;
     expirationDate : Int;
@@ -103,8 +102,8 @@ type Nat__1040412405 = Nat__920180692;
 type Nat__920180692 = Nat;
 type Node__1000929467<K, V> =
   {#internal : Internal__41346355<K, V>; #leaf : Leaf__712614010<K, V>};
-type PipelineStep__820775994 = {message : Text; step : Text; timestamp : Int};
-type PremiumPurchaseLegacy__1016316943 =
+type PipelineStep__370299827 = {message : Text; step : Text; timestamp : Int};
+type PremiumPurchaseLegacy__789420810 =
   {
     amount : Nat;
     customerName : Text;
@@ -116,8 +115,8 @@ type PremiumPurchaseLegacy__1016316943 =
     timestamp : Int;
     transactionId : Text
   };
-type PremiumPurchase__610324522 = PremiumPurchase__804399797;
-type PremiumPurchase__804399797 =
+type PremiumPurchase__103659187 = PremiumPurchase__685004209;
+type PremiumPurchase__685004209 =
   {
     amount : Nat;
     customerName : Text;
@@ -130,7 +129,7 @@ type PremiumPurchase__804399797 =
     timestamp : Int;
     transactionId : Text
   };
-type Product__288096850 =
+type Product__853085059 =
   {
     currency : Text;
     description : Text;
@@ -141,11 +140,11 @@ type Product__288096850 =
     name : Text;
     priceInCents : Nat
   };
-type ResendConfiguration__373905209 =
+type ResendConfiguration__638522522 =
   {apiKey : Text; baseUrl : Text; senderEmail : Text; serviceName : Text};
 type StripeConfiguration__87721349 =
   {allowedCountries : [Text]; secretKey : Text};
-type TransactionLog__435177000 =
+type TransactionLog__154839357 =
   {
     amountPaid : Text;
     createdAt : Int;
@@ -153,14 +152,14 @@ type TransactionLog__435177000 =
     features : [Text];
     id : Text;
     licenseStatus : Text;
-    pipelineSteps : [PipelineStep__820775994];
+    pipelineSteps : [PipelineStep__370299827];
     recipientEmail : Text;
     transactionId : Text;
     updatedAt : Int
   };
-type UserProfile__852920818 = {email : Text; name : Text};
+type UserProfile__491224006 = {email : Text; name : Text};
 type UserRole__1073662873 = {#admin; #guest; #user};
-type UserSubmission__260382216 =
+type UserSubmission__1047260070 =
   {downloadCount : Nat; email : Text; name : Text; timestamp : Int};
 actor ({
   stable accessControlState :
@@ -172,13 +171,13 @@ actor ({
   stable var adminBootstrapped : Bool;
   stable var adminRecords :
     {
-      var root : Node__1000929467<Text, AdminRecord__455002387>;
+      var root : Node__1000929467<Text, AdminRecord__862792469>;
       var size : Nat__1040412405
     };
   stable var auditLogEntries :
     {
       var blockIndex : Nat__1040412405;
-      var blocks : [var [var ?AuditEntry__251122708]];
+      var blocks : [var [var ?AuditEntry__849002978]];
       var elementIndex : Nat__1040412405
     };
   stable defaultSenderEmail : Text;
@@ -188,48 +187,48 @@ actor ({
     {var root : Node__1000929467<Text, Text>; var size : Nat__1040412405};
   stable var emailLogs :
     {
-      var root : Node__1000929467<Text, EmailLog__24701380>;
+      var root : Node__1000929467<Text, EmailLog__577630079>;
       var size : Nat__1040412405
     };
   stable var entitlementWorkflowLogs :
     {
-      var root : Node__1000929467<Text, [EntitlementWorkflowStep__582212868]>;
+      var root : Node__1000929467<Text, [EntitlementWorkflowStep__319498791]>;
       var size : Nat__1040412405
     };
   stable var entitlementsByEmail :
     {
-      var root : Node__1000929467<Text, CustomerEntitlement__734041086>;
+      var root : Node__1000929467<Text, CustomerEntitlement__774222852>;
       var size : Nat__1040412405
     };
   stable var licenseBundles :
     {
-      var root : Node__1000929467<Text, LicenseBundle__799487712>;
+      var root : Node__1000929467<Text, LicenseBundle__824924899>;
       var size : Nat__1040412405
     };
   stable var licenseFeatures :
     {
-      var root : Node__1000929467<Text, LicenseFeature__1020672901>;
+      var root : Node__1000929467<Text, LicenseFeature__846268300>;
       var size : Nat__1040412405
     };
   stable var licenseRecords :
     {
-      var root : Node__1000929467<Text, LicenseRecord__1060796829>;
+      var root : Node__1000929467<Text, LicenseRecord__257743349>;
       var size : Nat__1040412405
     };
   stable licenseTermDays : Int;
   stable var macInstallerFile :
-    ?{file : ExternalBlob__671167343; fileName : Text; mimeType : Text};
+    ?{file : Blob; fileName : Text; mimeType : Text};
   stable nsPerDay : Int;
   in premiumPurchases :
-    Map__222667396<Text, PremiumPurchaseLegacy__1016316943>;
-  stable var privateKeyFile : ?ExternalBlob__671167343;
+    Map__222667396<Text, PremiumPurchaseLegacy__789420810>;
+  stable var privateKeyFile : ?Blob;
   stable var privateKeyPem : ?Text;
   stable var products :
     {
-      var root : Node__1000929467<Text, Product__288096850>;
+      var root : Node__1000929467<Text, Product__853085059>;
       var size : Nat__1040412405
     };
-  stable var resendConfig : ?ResendConfiguration__373905209;
+  stable var resendConfig : ?ResendConfiguration__638522522;
   stable var sessionOwners :
     {
       var root : Node__1000929467<Text, Principal>;
@@ -248,23 +247,23 @@ actor ({
   stable var superAdminClaimUsed : Bool;
   stable var transactionLogs :
     {
-      var root : Node__1000929467<Text, TransactionLog__435177000>;
+      var root : Node__1000929467<Text, TransactionLog__154839357>;
       var size : Nat__1040412405
     };
   stable trialExcludedFeatures : [Text];
-  stable var trialLicenseFile : ?ExternalBlob__671167343;
+  stable var trialLicenseFile : ?Blob;
   stable var userProfiles :
     {
-      var root : Node__1000929467<Principal, UserProfile__852920818>;
+      var root : Node__1000929467<Principal, UserProfile__491224006>;
       var size : Nat__1040412405
     };
   stable var userSubmissions :
     {
-      var root : Node__1000929467<Text, UserSubmission__260382216>;
+      var root : Node__1000929467<Text, UserSubmission__1047260070>;
       var size : Nat__1040412405
     };
   stable var windowsInstallerFile :
-    ?{file : ExternalBlob__671167343; fileName : Text; mimeType : Text}
+    ?{file : Blob; fileName : Text; mimeType : Text}
 }, {
   stable accessControlState :
     {
@@ -275,13 +274,13 @@ actor ({
   stable var adminBootstrapped : Bool;
   stable var adminRecords :
     {
-      var root : Node__1000929467<Text, AdminRecord__455002387>;
+      var root : Node__1000929467<Text, AdminRecord__862792469>;
       var size : Nat__1040412405
     };
   stable var auditLogEntries :
     {
       var blockIndex : Nat__1040412405;
-      var blocks : [var [var ?AuditEntry__251122708]];
+      var blocks : [var [var ?AuditEntry__849002978]];
       var elementIndex : Nat__1040412405
     };
   stable defaultSenderEmail : Text;
@@ -291,51 +290,51 @@ actor ({
     {var root : Node__1000929467<Text, Text>; var size : Nat__1040412405};
   stable var emailLogs :
     {
-      var root : Node__1000929467<Text, EmailLog__24701380>;
+      var root : Node__1000929467<Text, EmailLog__577630079>;
       var size : Nat__1040412405
     };
   stable var entitlementWorkflowLogs :
     {
-      var root : Node__1000929467<Text, [EntitlementWorkflowStep__582212868]>;
+      var root : Node__1000929467<Text, [EntitlementWorkflowStep__319498791]>;
       var size : Nat__1040412405
     };
   stable var entitlementsByEmail :
     {
-      var root : Node__1000929467<Text, CustomerEntitlement__734041086>;
+      var root : Node__1000929467<Text, CustomerEntitlement__774222852>;
       var size : Nat__1040412405
     };
   stable var licenseBundles :
     {
-      var root : Node__1000929467<Text, LicenseBundle__799487712>;
+      var root : Node__1000929467<Text, LicenseBundle__824924899>;
       var size : Nat__1040412405
     };
   stable var licenseFeatures :
     {
-      var root : Node__1000929467<Text, LicenseFeature__1020672901>;
+      var root : Node__1000929467<Text, LicenseFeature__846268300>;
       var size : Nat__1040412405
     };
   stable var licenseRecords :
     {
-      var root : Node__1000929467<Text, LicenseRecord__1060796829>;
+      var root : Node__1000929467<Text, LicenseRecord__257743349>;
       var size : Nat__1040412405
     };
   stable licenseTermDays : Int;
   stable var macInstallerFile :
-    ?{file : ExternalBlob__671167343; fileName : Text; mimeType : Text};
+    ?{file : Blob; fileName : Text; mimeType : Text};
   stable nsPerDay : Int;
   stable var premiumPurchases :
     {
-      var root : Node__1000929467<Text, PremiumPurchase__610324522>;
+      var root : Node__1000929467<Text, PremiumPurchase__103659187>;
       var size : Nat__1040412405
     };
-  stable var privateKeyFile : ?ExternalBlob__671167343;
+  stable var privateKeyFile : ?Blob;
   stable var privateKeyPem : ?Text;
   stable var products :
     {
-      var root : Node__1000929467<Text, Product__288096850>;
+      var root : Node__1000929467<Text, Product__853085059>;
       var size : Nat__1040412405
     };
-  stable var resendConfig : ?ResendConfiguration__373905209;
+  stable var resendConfig : ?ResendConfiguration__638522522;
   stable var sessionOwners :
     {
       var root : Node__1000929467<Text, Principal>;
@@ -354,21 +353,21 @@ actor ({
   stable var superAdminClaimUsed : Bool;
   stable var transactionLogs :
     {
-      var root : Node__1000929467<Text, TransactionLog__435177000>;
+      var root : Node__1000929467<Text, TransactionLog__154839357>;
       var size : Nat__1040412405
     };
   stable trialExcludedFeatures : [Text];
-  stable var trialLicenseFile : ?ExternalBlob__671167343;
+  stable var trialLicenseFile : ?Blob;
   stable var userProfiles :
     {
-      var root : Node__1000929467<Principal, UserProfile__852920818>;
+      var root : Node__1000929467<Principal, UserProfile__491224006>;
       var size : Nat__1040412405
     };
   stable var userSubmissions :
     {
-      var root : Node__1000929467<Text, UserSubmission__260382216>;
+      var root : Node__1000929467<Text, UserSubmission__1047260070>;
       var size : Nat__1040412405
     };
   stable var windowsInstallerFile :
-    ?{file : ExternalBlob__671167343; fileName : Text; mimeType : Text}
+    ?{file : Blob; fileName : Text; mimeType : Text}
 });

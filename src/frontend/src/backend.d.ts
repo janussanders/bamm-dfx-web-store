@@ -7,12 +7,9 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
-export class ExternalBlob {
-    getBytes(): Promise<Uint8Array<ArrayBuffer>>;
-    getDirectURL(): string;
-    static fromURL(url: string): ExternalBlob;
-    static fromBytes(blob: Uint8Array<ArrayBuffer>): ExternalBlob;
-    withUploadProgress(onProgress: (percentage: number) => void): ExternalBlob;
+export interface UserProfile {
+    name: string;
+    email: string;
 }
 export interface Product {
     id: string;
@@ -83,17 +80,6 @@ export interface ResendConfiguration {
     apiKey: string;
     senderEmail: string;
 }
-export type InstallerDownloadResult = {
-    __kind__: "ok";
-    ok: {
-        file: ExternalBlob;
-        mimeType: string;
-        fileName: string;
-    };
-} | {
-    __kind__: "err";
-    err: string;
-};
 export type EmailSendResult = {
     __kind__: "ok";
     ok: string;
@@ -101,6 +87,23 @@ export type EmailSendResult = {
     __kind__: "err";
     err: string;
 };
+export type InstallerDownloadResult = {
+    __kind__: "ok";
+    ok: {
+        file: Uint8Array;
+        mimeType: string;
+        fileName: string;
+    };
+} | {
+    __kind__: "err";
+    err: string;
+};
+export interface EntitlementWorkflowStep {
+    step: string;
+    message: string;
+    timestamp: bigint;
+    stripeSessionId?: string;
+}
 export interface TransformationInput {
     context: Uint8Array;
     response: http_request_result;
@@ -109,48 +112,13 @@ export interface PremiumPurchase {
     customerName: string;
     status: string;
     features: Array<string>;
+    entitlementId: string;
     paymentConfirmation: string;
     email: string;
     timestamp: bigint;
     stripeSessionId: string;
     amount: bigint;
     transactionId: string;
-    entitlementId: string;
-}
-export interface EntitlementStatusView {
-    entitlementId: string;
-    email: string;
-    features: Array<string>;
-    status: string;
-    activationDeadlineIso: string;
-    activatedAtIso?: string;
-    expiresIso?: string;
-    machineBindingDigest?: string;
-    activationNonce: string;
-}
-export interface LinkedPremiumPurchaseView {
-    transactionId: string;
-    stripeSessionId: string;
-    amount: bigint;
-    status: string;
-    paymentConfirmation: string;
-    features: Array<string>;
-    customerName: string;
-    purchasedAtIso: string;
-    entitlementId: string;
-}
-export interface EntitlementWorkflowStep {
-    step: string;
-    message: string;
-    timestamp: bigint;
-    stripeSessionId?: string;
-}
-export interface EntitlementRegistryEntry {
-    entitlement: EntitlementStatusView;
-    purchasedAtIso: string;
-    updatedAtIso: string;
-    linkedPurchases: Array<LinkedPremiumPurchaseView>;
-    workflowSteps: Array<EntitlementWorkflowStep>;
 }
 export interface LicenseFeature {
     id: string;
@@ -160,23 +128,23 @@ export interface LicenseFeature {
     name: string;
     description: string;
     isActive: boolean;
-    image?: ExternalBlob;
+    image?: Uint8Array;
     priceInCents: bigint;
 }
 export interface LicenseBundle {
-    bundleId: string;
-    name: string;
-    priceInCentsAnnual: bigint;
     featureIds: Array<string>;
-    headline: string;
+    priceInCentsAnnual: bigint;
     bullets: Array<string>;
-    badge: string;
-    saveTextOverride: string;
-    disclaimer: string;
-    alaCarteSumCents: bigint;
-    savingsCents: bigint;
-    isActive: boolean;
     sortOrder: bigint;
+    headline: string;
+    name: string;
+    isActive: boolean;
+    saveTextOverride: string;
+    savingsCents: bigint;
+    badge: string;
+    disclaimer: string;
+    bundleId: string;
+    alaCarteSumCents: bigint;
 }
 export interface StripeConfiguration {
     allowedCountries: Array<string>;
@@ -198,6 +166,11 @@ export interface TransactionLog {
     recipientEmail: string;
     transactionId: string;
 }
+export interface ActivateEntitlementRequest {
+    entitlementId: string;
+    activationNonce: string;
+    machineDigest: string;
+}
 export interface UserSubmission {
     name: string;
     email: string;
@@ -208,10 +181,28 @@ export interface http_header {
     value: string;
     name: string;
 }
+export interface EntitlementRegistryEntry {
+    purchasedAtIso: string;
+    linkedPurchases: Array<LinkedPremiumPurchaseView>;
+    updatedAtIso: string;
+    workflowSteps: Array<EntitlementWorkflowStep>;
+    entitlement: EntitlementStatusView;
+}
 export interface http_request_result {
     status: bigint;
     body: Uint8Array;
     headers: Array<http_header>;
+}
+export interface EntitlementStatusView {
+    status: string;
+    features: Array<string>;
+    entitlementId: string;
+    activationDeadlineIso: string;
+    email: string;
+    machineBindingDigest?: string;
+    activationNonce: string;
+    expiresIso?: string;
+    activatedAtIso?: string;
 }
 export interface ShoppingItem {
     productName: string;
@@ -246,6 +237,17 @@ export interface AdminRecordPublic {
     isProtected: boolean;
     lastLogin?: bigint;
 }
+export interface LinkedPremiumPurchaseView {
+    customerName: string;
+    purchasedAtIso: string;
+    status: string;
+    features: Array<string>;
+    entitlementId: string;
+    paymentConfirmation: string;
+    stripeSessionId: string;
+    amount: bigint;
+    transactionId: string;
+}
 export interface LicenseRecord {
     features: Array<string>;
     deliveryStatus: string;
@@ -253,10 +255,6 @@ export interface LicenseRecord {
     licenseJson: string;
     generatedTimestamp: bigint;
     recipientEmail: string;
-}
-export interface UserProfile {
-    name: string;
-    email: string;
 }
 export enum AdminRole {
     licenseGenerator = "licenseGenerator",
@@ -275,11 +273,41 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
-    addLicenseFeature(feature: LicenseFeature): Promise<void>;
+    activateEntitlement(request: ActivateEntitlementRequest): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     addLicenseBundle(bundle: LicenseBundle): Promise<void>;
+    addLicenseFeature(feature: LicenseFeature): Promise<void>;
     addProduct(product: Product): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     assignSuperAdmin(email: string): Promise<Result>;
+    /**
+     * / One-time admin backfill: create CustomerEntitlement rows from historical premiumPurchases.
+     * / Stable upgrade only blanked PremiumPurchase.entitlementId (DDR-016); it never populated
+     * / entitlementsByEmail. Eligible purchase.status: paid_sent / paid / complete / confirmed
+     * / (fulfillment writes "confirmed" before email; many live rows stay there). Also accept
+     * / paymentConfirmation == "paid" when status is ambiguous. Skips rows that already have a
+     * / non-empty entitlementId. Fresh activation window starts at backfill time so old purchase
+     * / timestamps do not instantly forfeit. Does not re-email licenses.
+     */
+    backfillEntitlementsFromPurchases(): Promise<{
+        __kind__: "ok";
+        ok: {
+            registrySize: bigint;
+            created: bigint;
+            skippedNoFeatures: bigint;
+            skippedIneligibleStatus: bigint;
+            skippedAlreadyLinked: bigint;
+            linked: bigint;
+        };
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     bootstrapSuperAdmin(name: string, email: string): Promise<string>;
     checkAnyPendingInvite(): Promise<{
         role: string;
@@ -298,8 +326,8 @@ export interface backendInterface {
     deleteAdmin(email: string): Promise<Result>;
     deleteEmailLog(logKey: string): Promise<void>;
     deleteEmailLogs(logKeys: Array<string>): Promise<void>;
-    deleteLicenseFeature(featureId: string): Promise<void>;
     deleteLicenseBundle(bundleId: string): Promise<void>;
+    deleteLicenseFeature(featureId: string): Promise<void>;
     deleteLicenseRecord(recordId: string): Promise<void>;
     deleteLicenseRecords(recordIds: Array<string>): Promise<void>;
     deletePremiumPurchase(transactionId: string): Promise<Result_3>;
@@ -330,6 +358,7 @@ export interface backendInterface {
     generateLicense(request: LicenseRequest): Promise<string>;
     getActiveFeatures(): Promise<Array<LicenseFeature>>;
     getActivePremiumProductNames(): Promise<Array<string>>;
+    getAllLicenseBundles(): Promise<Array<LicenseBundle>>;
     getAuditLog(limit: bigint): Promise<Array<AuditEntry>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -339,64 +368,70 @@ export interface backendInterface {
         resendConfigured: boolean;
     }>;
     getCoreFeatures(): Promise<Array<LicenseFeature>>;
+    getCustomerEntitlements(customerEmail: string): Promise<Array<EntitlementStatusView>>;
+    getEmailAutomationSettings(): Promise<EmailAutomationSettings>;
+    getEmailLogs(): Promise<Array<EmailLog>>;
     getEntitlementRegistry(): Promise<Array<EntitlementRegistryEntry>>;
-    getInstallerFileNames(): Promise<{
-        macFileName: string | null;
-        windowsFileName: string | null;
-    }>;
-    backfillEntitlementsFromPurchases(): Promise<{
+    getEntitlementStatus(entitlementId: string, activationNonce: string): Promise<{
         __kind__: "ok";
-        ok: {
-            created: bigint;
-            linked: bigint;
-            skippedAlreadyLinked: bigint;
-            skippedNoFeatures: bigint;
-            skippedIneligibleStatus: bigint;
-            registrySize: bigint;
-        };
+        ok: EntitlementStatusView;
     } | {
         __kind__: "err";
         err: string;
     }>;
-    getEmailAutomationSettings(): Promise<EmailAutomationSettings>;
-    getEmailLogs(): Promise<Array<EmailLog>>;
-    getLicenseFeatures(): Promise<Array<LicenseFeature>>;
+    /**
+     * / Public metadata only (DDR-029) — file names for version display without downloading blobs.
+     */
+    getInstallerFileNames(): Promise<{
+        windowsFileName?: string;
+        macFileName?: string;
+    }>;
     getLicenseBundles(): Promise<Array<LicenseBundle>>;
-    getAllLicenseBundles(): Promise<Array<LicenseBundle>>;
+    getLicenseFeatures(): Promise<Array<LicenseFeature>>;
     getLicenseRecords(): Promise<Array<LicenseRecord>>;
     getLicenseReferenceNames(): Promise<Array<string>>;
+    getLicensingPolicy(): Promise<{
+        licenseTermDays: bigint;
+        activationWindowDays: bigint;
+        machineBindingAlgorithm: string;
+    }>;
     getMacInstallerFile(): Promise<{
-        file: ExternalBlob;
+        file: Uint8Array;
         mimeType: string;
         fileName: string;
     } | null>;
     getMyAdminRole(): Promise<string | null>;
     getPremiumFeatures(): Promise<Array<LicenseFeature>>;
     getPremiumPurchases(): Promise<Array<PremiumPurchase>>;
-    getPrivateKeyFile(): Promise<ExternalBlob | null>;
-    getPrivateKeyForSigning(): Promise<ExternalBlob | null>;
     getProducts(): Promise<Array<Product>>;
     getResendConfiguration(): Promise<ResendConfiguration | null>;
     getStripeSessionStatus(sessionId: string): Promise<Result_1>;
     getSuperAdminClaimCode(): Promise<string>;
     getTransactionLogs(): Promise<Array<TransactionLog>>;
     getTrialEligibleProductNames(): Promise<Array<string>>;
-    getTrialLicenseFile(): Promise<ExternalBlob | null>;
+    getTrialLicenseFile(): Promise<Uint8Array | null>;
     getTrialLicensePayload(email: string): Promise<string>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getUserSubmissions(): Promise<Array<UserSubmission>>;
     getWindowsInstallerFile(): Promise<{
-        file: ExternalBlob;
+        file: Uint8Array;
         mimeType: string;
         fileName: string;
     } | null>;
     incrementDownloadCount(email: string): Promise<void>;
-    initializeDefaultPremiumFeatures(): Promise<void>;
     initializeDefaultLicenseBundles(): Promise<void>;
+    initializeDefaultPremiumFeatures(): Promise<void>;
     inviteAdmin(name: string, email: string, role: AdminRole): Promise<Result>;
     isAdminByRole(): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
     isStripeConfigured(): Promise<boolean>;
+    issueTrialLicenseAndEmail(name: string, email: string): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     listAdmins(): Promise<Array<AdminRecordPublic>>;
     logEmail(email: string, subject: string, deliveryStatus: string): Promise<void>;
     migrateFeatureNames(): Promise<string>;
@@ -415,6 +450,18 @@ export interface backendInterface {
     resendTrialLicense(email: string): Promise<{
         __kind__: "ok";
         ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    /**
+     * / Admin support: clear machine binding and return entitlement to pending_activation
+     * / with a fresh activation window + nonce (so the customer can re-activate on a device).
+     * / Does not delete the registry row or linked purchases. One row remains per email.
+     */
+    resetEntitlementActivation(entitlementId: string): Promise<{
+        __kind__: "ok";
+        ok: EntitlementStatusView;
     } | {
         __kind__: "err";
         err: string;
@@ -446,11 +493,11 @@ export interface backendInterface {
     testResendConnection(): Promise<EmailSendResult>;
     transform(input: TransformationInput): Promise<TransformationOutput>;
     updateAdminRole(email: string, newRole: AdminRole): Promise<Result>;
+    updateBundleStatus(bundleId: string, isActive: boolean): Promise<void>;
     updateEmailAutomationSettings(settings: EmailAutomationSettings): Promise<void>;
     updateFeatureStatus(featureId: string, isActive: boolean): Promise<void>;
-    updateLicenseFeature(feature: LicenseFeature): Promise<void>;
     updateLicenseBundle(bundle: LicenseBundle): Promise<void>;
-    updateBundleStatus(bundleId: string, isActive: boolean): Promise<void>;
+    updateLicenseFeature(feature: LicenseFeature): Promise<void>;
     updateProduct(product: Product): Promise<void>;
     updatePurchaseFeatures(transactionId: string, features: Array<string>): Promise<{
         __kind__: "ok";
@@ -460,9 +507,10 @@ export interface backendInterface {
         err: string;
     }>;
     updateResendServiceName(serviceName: string): Promise<void>;
-    uploadFeatureImage(featureId: string, image: ExternalBlob): Promise<void>;
-    uploadMacInstaller(file: ExternalBlob, fileName: string): Promise<boolean>;
-    uploadPrivateKeyFile(file: ExternalBlob): Promise<void>;
-    uploadTrialLicenseFile(file: ExternalBlob): Promise<void>;
-    uploadWindowsInstaller(file: ExternalBlob, fileName: string): Promise<boolean>;
+    uploadFeatureImage(featureId: string, image: Uint8Array): Promise<void>;
+    uploadMacInstaller(file: Uint8Array, fileName: string): Promise<boolean>;
+    uploadPrivateKeyFile(file: Uint8Array): Promise<void>;
+    uploadPrivateKeyPem(pem: string): Promise<void>;
+    uploadTrialLicenseFile(file: Uint8Array): Promise<void>;
+    uploadWindowsInstaller(file: Uint8Array, fileName: string): Promise<boolean>;
 }

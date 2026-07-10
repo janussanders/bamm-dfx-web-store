@@ -1,11 +1,10 @@
 {
   "version": 3,
-  "mopsTomlDepsHash": "834b39fa55d4f27a45d6377ad35dbcc7efc60e9fad5010badbee32e0d5ce985d",
+  "mopsTomlDepsHash": "0b493e20c8a7bfec6ba7a60fb0d98095c2be695fe02d58643518640cf9c30269",
   "deps": {
     "core": "2.5.0",
     "base": "0.16.0",
     "caffeineai-authorization": "0.1.1",
-    "caffeineai-object-storage": "0.1.2",
     "caffeineai-stripe": "0.1.1",
     "caffeineai-http-outcalls": "0.1.1",
     "sha2": "0.1.14"
@@ -135,15 +134,6 @@
       "caffeineai-authorization@0.1.1/rules/no-redeclare-assign-caller-user-role.toml": "e8669dfe4931aaa4268682877388255342ce2cb2cdafd21a121ddf22ef42b500",
       "caffeineai-authorization@0.1.1/rules/mixin-authorization-included.toml": "57fa6a81594ea8c12e0a3315c36dec4adf718444b8ef70a11cda1aaa1b11624a",
       "caffeineai-authorization@0.1.1/src/access-control.mo": "e517d2a028b510d804a633631a15981160def610ea9410dd5a122f92af3c04d8"
-    },
-    "caffeineai-object-storage@0.1.2": {
-      "caffeineai-object-storage@0.1.2/rules/no-redeclare-caffeine-storage-refill.toml": "ef27548d981848d1e9940053aae9c31162d4c9352778c1c3a2de7476924da9f7",
-      "caffeineai-object-storage@0.1.2/rules/no-redeclare-caffeine-storage-gateway.toml": "8a232d3119adc5d29ff9cfeaea5ba4dedd96c6e7d9a6c1b544723bc666e923be",
-      "caffeineai-object-storage@0.1.2/rules/mixin-storage-included.toml": "d2ab392a7a2a07f1c23f77f9357f6d0967346bff30a4588b8b53736f3931f1d5",
-      "caffeineai-object-storage@0.1.2/README.md": "cec7c399f7f9dee04709ba8e6610fe380e887ef667b9981082dac06eeb9c36fc",
-      "caffeineai-object-storage@0.1.2/src/Storage.mo": "e4b61a9c3400f7d38f9b239451c37d81719889cbbf23a5a45bbd166c437500f5",
-      "caffeineai-object-storage@0.1.2/mops.toml": "530718e8c2e82e9641f6feb4dfdf9beff590ef1a45b3ae2dbcdd9dce863e140a",
-      "caffeineai-object-storage@0.1.2/src/Mixin.mo": "175c6b98672a83054fc08855062d1a7b7f2bd3713bf11a60d5319ac5afefe2b3"
     },
     "caffeineai-stripe@0.1.1": {
       "caffeineai-stripe@0.1.1/mops.toml": "bfdbf745c9573359cf2510776098077672b8e2ec87f1746657edccee9a2fdcd7",

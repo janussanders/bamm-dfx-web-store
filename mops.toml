@@ -9,6 +9,7 @@ args = [ "--release" ]
 [canisters.backend]
 main = "src/backend/main.mo"
 
+# DDR-003: baseline regenerated from Blob-only actor (no MixinObjectStorage). Empty dfx canisters OK.
 [canisters.backend.check-stable]
 path = "scripts/check-stable/backend-02c10d9.most"
 
@@ -26,7 +27,6 @@ args = [ "--default-persistent-actors", "--actor-idl=src/backend/system-idl", "-
 core = "2.5.0"
 base = "0.16.0"
 caffeineai-authorization = "0.1.1"
-caffeineai-object-storage = "0.1.2"
 caffeineai-stripe = "0.1.1"
 caffeineai-http-outcalls = "0.1.1"
 sha2 = "0.1.14"

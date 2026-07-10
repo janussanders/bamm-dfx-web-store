@@ -6,7 +6,7 @@
 |----|-------|--------|------|
 | [DDR-001](DDR-001-BAMM-Dfx-Web-Store-Parallel-Path.md) | Parallel path & production freeze | Approved (design) | 2026-07-10 |
 | [DDR-002](DDR-002-Dfx-Internet-Identity-Security.md) | Internet Identity & security | Approved (design) | 2026-07-10 |
-| [DDR-003](DDR-003-Dfx-Object-Storage-Replacement.md) | Object storage replacement | Approved (design) | 2026-07-10 |
+| [DDR-003](DDR-003-Dfx-Object-Storage-Replacement.md) | Object storage replacement | Implemented (spike) | 2026-07-10 |
 | [DDR-004](DDR-004-Dfx-CI-Deploy-Agentic-URL.md) | CI deploy & agentic test URL | Approved (design) | 2026-07-10 |
 
 ## Legacy Caffeine DDRs (lineage only)

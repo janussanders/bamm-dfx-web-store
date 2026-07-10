@@ -2310,7 +2310,9 @@ export default function AdminPanel() {
                             <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
                               {feature.image ? (
                                 <img
-                                  src={feature.image.getDirectURL()}
+                                  src={ExternalBlob.fromBytes(
+                                    feature.image,
+                                  ).getDirectURL()}
                                   alt={feature.name}
                                   className="w-full h-full object-cover"
                                 />
