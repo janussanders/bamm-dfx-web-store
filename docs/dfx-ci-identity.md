@@ -79,7 +79,33 @@ dfx cycles convert --amount 0.5 --network ic
 dfx cycles balance --network ic
 ```
 
-**Rough guide:** 0.5–1.0 ICP converted is usually enough to create backend + frontend and iterate a few deploys. Top up as needed.
+**Rough guide (mainnet, measured 2026-07-10):**
+
+| Step | Cycles (approx.) |
+|------|------------------|
+| Create one empty canister | ~0.5 TC creation fee + deposit left on canister |
+| Install ~1 MiB Motoko wasm | ~0.6+ TC **on the canister** (not just in the cycles ledger) |
+| Assets frontend create + upload | similar create fee + install |
+
+**Practical top-up:** convert **2 ICP** into the `bamm-dfx-ci` cycles ledger before the next deploy (1 ICP was enough to *create* both canisters but not enough to *install* the backend wasm).
+
+NNS send target (account ID for this CI principal):
+
+```text
+b2986df0bfef35a077a8d162726433b5a8d852d01cfa9352044c3c38e7dce98e
+```
+
+Then:
+
+```bash
+dfx identity use bamm-dfx-ci
+dfx ledger balance --network ic
+dfx cycles convert --amount 1.99 --network ic   # leave dust for ledger fee
+dfx cycles balance --network ic
+dfx cycles top-up backend 500000000000 --network ic
+```
+
+Re-run Actions **Deploy dfx (IC)** with `deploy=true` (frontend canister was deleted during a failed cycles rebalance and will be recreated).
 
 ### Option B — NNS / ICP dashboard
 

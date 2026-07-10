@@ -66,5 +66,5 @@ Until the secret exists and the identity is funded, run the workflow with `deplo
 | DDR-003 Blob spike / mops build | Done |
 | `dfx.json` | Added |
 | CI build + optional deploy | Added |
-| Live IC URL | Canisters created — backend `5z2v5-…`, frontend `5qz6b-…`; redeploy after pnpm assets build fix |
+| Live IC URL | Backend canister `5z2v5-…` created; frontend recreated after next fund; **blocked on cycles** (~0.18 TC more to install backend wasm) |
 | ≥1 MiB installer round-trip | Pending after first green deploy |
