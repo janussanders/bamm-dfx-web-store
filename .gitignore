@@ -11,3 +11,6 @@ frontend/public/assets/*.png
 .pnpm-store/
 .cache/
 .caffeine-release-*-notes.md
+.dfx/
+canister_ids.json
+!canister_ids.json.example

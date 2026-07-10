@@ -1,0 +1,118 @@
+name: Deploy dfx (IC)
+
+# Builds Motoko + frontend and optionally deploys to IC.
+# Live agentic URL requires repo secrets (see DDR-004 / docs/dfx-deploy.md).
+# Does not touch Caffeine production canisters.
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: 'dfx network'
+        required: true
+        default: 'ic'
+        type: choice
+        options:
+          - ic
+          - local
+      deploy:
+        description: 'Deploy after build (needs DFX_IDENTITY_PEM + cycles)'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dfx-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install JS deps
+        run: pnpm install --prefer-offline
+
+      - name: Build Motoko backend (mops)
+        run: |
+          npx -y ic-mops@latest install
+          npx -y ic-mops@latest build
+          test -f src/backend/dist/backend.wasm
+          test -f src/backend/dist/backend.did
+
+      - name: Build frontend
+        working-directory: src/frontend
+        run: |
+          pnpm build
+          test -d dist
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dfx-build-${{ github.sha }}
+          path: |
+            src/backend/dist/backend.wasm
+            src/backend/dist/backend.did
+            src/frontend/dist/
+            dfx.json
+
+      - name: Install dfx
+        if: ${{ inputs.deploy }}
+        run: |
+          sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+          dfx --version
+
+      - name: Import identity and deploy
+        if: ${{ inputs.deploy }}
+        env:
+          DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
+          DFX_NETWORK: ${{ inputs.network }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DFX_IDENTITY_PEM:-}" ]; then
+            echo "::error::DFX_IDENTITY_PEM secret is required for deploy"
+            exit 1
+          fi
+          mkdir -p "$HOME/.config/dfx/identity/ci"
+          printf '%s\n' "$DFX_IDENTITY_PEM" > "$HOME/.config/dfx/identity/ci/identity.pem"
+          dfx identity use ci || dfx identity new ci --storage-mode=plaintext
+          # identity new may ignore existing pem — force
+          cp "$HOME/.config/dfx/identity/ci/identity.pem" "$HOME/.config/dfx/identity/ci/identity.pem.bak" 2>/dev/null || true
+          dfx identity use ci
+          dfx deploy --network "$DFX_NETWORK" --yes
+          BACKEND_ID=$(dfx canister id backend --network "$DFX_NETWORK")
+          FRONTEND_ID=$(dfx canister id frontend --network "$DFX_NETWORK")
+          {
+            echo "## BAMM dfx Web Store deploy"
+            echo "- **Network:** $DFX_NETWORK"
+            echo "- **Backend:** \`$BACKEND_ID\`"
+            echo "- **Frontend:** \`$FRONTEND_ID\`"
+            echo "- **Agentic URL:** https://$FRONTEND_ID.icp0.io"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "FRONTEND_CANISTER_ID=$FRONTEND_ID" >> "$GITHUB_ENV"
+
+      - name: Build-only summary
+        if: ${{ !inputs.deploy }}
+        run: |
+          {
+            echo "## BAMM dfx Web Store build"
+            echo "- Motoko wasm + candid OK"
+            echo "- Frontend dist OK"
+            echo "- Deploy skipped (set deploy=true + DFX_IDENTITY_PEM for live URL)"
+          } >> "$GITHUB_STEP_SUMMARY"

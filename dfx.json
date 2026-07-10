@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "dfx": "0.24.3",
+  "canisters": {
+    "backend": {
+      "type": "custom",
+      "build": "npx -y ic-mops@latest build",
+      "wasm": "src/backend/dist/backend.wasm",
+      "candid": "src/backend/dist/backend.did",
+      "metadata": [
+        {
+          "name": "candid:service",
+          "path": "src/backend/dist/backend.did"
+        }
+      ]
+    },
+    "frontend": {
+      "type": "assets",
+      "source": ["src/frontend/dist"],
+      "dependencies": ["backend"],
+      "workspace": "src/frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "packtool": ""
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:4943",
+      "type": "ephemeral"
+    },
+    "ic": {
+      "providers": ["https://icp0.io"],
+      "type": "persistent"
+    }
+  }
+}

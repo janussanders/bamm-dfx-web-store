@@ -1,26 +1,30 @@
+# BAMM contracts alignment (optional)
+
+# Not required for dfx build/deploy (DDR-003/004).
+# Validates contracts/*.snapshot.json against BAMM @bamm/contracts SSOT.
+# Disabled on push/PR by default — pinned BAMM_CONTRACTS_REF often drifts and
+# fails the orphan dfx repo. Re-enable via workflow_dispatch when refreshing snapshots.
+
 name: BAMM contracts alignment
 
 on:
-  pull_request:
-    paths:
-      - 'contracts/canister-features.snapshot.json'
-      - 'contracts/canister-bundles.snapshot.json'
-      - '.github/workflows/bamm-contracts-alignment.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'contracts/canister-features.snapshot.json'
-      - 'contracts/canister-bundles.snapshot.json'
+  workflow_dispatch:
+  # Uncomment when snapshots are intentionally refreshed against a live BAMM ref:
+  # pull_request:
+  #   paths:
+  #     - 'contracts/canister-features.snapshot.json'
+  #     - 'contracts/canister-bundles.snapshot.json'
+  #     - '.github/workflows/bamm-contracts-alignment.yml'
 
-# Pin to a BAMM branch or tag that contains packages/bamm-contracts bundle rollout.
 env:
-  BAMM_CONTRACTS_REF: feat/tiered-bundle-licensing-rollout
+  # Prefer a tag/main that still contains packages/bamm-contracts
+  BAMM_CONTRACTS_REF: main
 
 jobs:
   validate-snapshot:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout e-commerce
+      - name: Checkout dfx web store
         uses: actions/checkout@v4
 
       - name: Checkout BAMM contracts

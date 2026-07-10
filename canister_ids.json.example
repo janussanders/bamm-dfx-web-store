@@ -1,0 +1,8 @@
+{
+  "backend": {
+    "ic": "REPLACE_AFTER_FIRST_DEPLOY"
+  },
+  "frontend": {
+    "ic": "REPLACE_AFTER_FIRST_DEPLOY"
+  }
+}
