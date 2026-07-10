@@ -1,0 +1,19 @@
+manifest_version = "0.1.0"
+
+[project]
+name = "backend"
+type = "motoko"
+main = "main.mo"
+
+[build]
+# LOCKED — DDR-026: sibling mops.toml in this directory (Motoko sandbox cwd).
+# Parent directory is outside the sandbox; do not leave this directory for mops.
+# Sibling mops.toml must keep --default-persistent-actors (IC0503 — DDR-017).
+commands = ["mops install", "mops build", "pnpm bindgen"]
+out = "dist"
+
+[check]
+commands = ["mops install", "mops check"]
+
+[check.fix]
+commands = ["mops install", "mops check --fix"]

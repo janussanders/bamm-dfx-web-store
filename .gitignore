@@ -1,0 +1,13 @@
+node_modules/
+dist/
+src/frontend/dist/
+frontend/public/assets/screenshot_*
+frontend/public/assets/image-*
+frontend/public/assets/*.png
+!frontend/public/assets/generated/
+.mops/
+.old/
+.platform/
+.pnpm-store/
+.cache/
+.caffeine-release-*-notes.md

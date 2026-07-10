@@ -1,0 +1,16 @@
+manifest_version = "0.1.0"
+
+[project]
+name = "frontend"
+type = "assets"
+
+[build]
+# LOCKED — DDR-024: rm -rf dist + vite only (no sibling preflight on Caffeine)
+commands = ["rm -rf dist", "pnpm build"]
+out = "dist"
+
+[check]
+commands = ["pnpm typecheck"]
+
+[check.fix]
+commands = ["pnpm typecheck", "pnpm fix"]

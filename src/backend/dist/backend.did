@@ -1,0 +1,530 @@
+type http_request_result = 
+ record {
+   body: blob;
+   headers: vec http_header;
+   status: nat;
+ };
+type http_header = 
+ record {
+   name: text;
+   value: text;
+ };
+type _ImmutableObjectStorageRefillResult = 
+ record {
+   success: opt bool;
+   topped_up_amount: opt nat;
+ };
+type _ImmutableObjectStorageRefillInformation = record {
+                                                  proposed_top_up_amount:
+                                                   opt nat;};
+type _ImmutableObjectStorageCreateCertificateResult = 
+ record {
+   blob_hash: text;
+   method: text;
+ };
+type UserSubmission = 
+ record {
+   downloadCount: nat;
+   email: text;
+   name: text;
+   timestamp: int;
+ };
+type UserRole = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type UserProfile = 
+ record {
+   email: text;
+   name: text;
+ };
+type TransformationOutput = 
+ record {
+   body: blob;
+   headers: vec http_header;
+   status: nat;
+ };
+type TransformationInput = 
+ record {
+   context: blob;
+   response: http_request_result;
+ };
+type TransactionLog = 
+ record {
+   amountPaid: text;
+   createdAt: int;
+   customerName: text;
+   features: vec text;
+   id: text;
+   licenseStatus: text;
+   pipelineSteps: vec PipelineStep;
+   recipientEmail: text;
+   transactionId: text;
+   updatedAt: int;
+ };
+type StripeConfiguration = 
+ record {
+   allowedCountries: vec text;
+   secretKey: text;
+ };
+type ShoppingItem = 
+ record {
+   currency: text;
+   priceInCents: nat;
+   productDescription: text;
+   productName: text;
+   quantity: nat;
+ };
+type Result_3 = 
+ variant {
+   err: text;
+   ok;
+ };
+type Result_2 = 
+ variant {
+   err: text;
+   ok: nat;
+ };
+type Result_1 = 
+ variant {
+   err: text;
+   ok:
+    record {
+      amountTotal: nat;
+      bamm_transaction_id: text;
+      customerEmail: text;
+      customerName: text;
+      features: vec text;
+      sessionId: text;
+      status: text;
+    };
+ };
+type Result = 
+ variant {
+   err: text;
+   ok: text;
+ };
+type ResendConfiguration = 
+ record {
+   apiKey: text;
+   baseUrl: text;
+   senderEmail: text;
+   serviceName: text;
+ };
+type Product = 
+ record {
+   currency: text;
+   description: text;
+   id: text;
+   imageUrl: opt text;
+   isActive: bool;
+   isPremium: bool;
+   name: text;
+   priceInCents: nat;
+ };
+type PremiumPurchase = 
+ record {
+   amount: nat;
+   customerName: text;
+   email: text;
+   entitlementId: text;
+   features: vec text;
+   paymentConfirmation: text;
+   status: text;
+   stripeSessionId: text;
+   timestamp: int;
+   transactionId: text;
+ };
+type PipelineStep = 
+ record {
+   message: text;
+   step: text;
+   timestamp: int;
+ };
+type LinkedPremiumPurchaseView = 
+ record {
+   amount: nat;
+   customerName: text;
+   entitlementId: text;
+   features: vec text;
+   paymentConfirmation: text;
+   purchasedAtIso: text;
+   status: text;
+   stripeSessionId: text;
+   transactionId: text;
+ };
+type LicenseRequest = 
+ record {
+   deliveryMethod: text;
+   expirationDate: int;
+   features: vec text;
+   recipientEmail: text;
+ };
+type LicenseRecord = 
+ record {
+   deliveryStatus: text;
+   expirationDate: int;
+   features: vec text;
+   generatedTimestamp: int;
+   licenseJson: text;
+   recipientEmail: text;
+ };
+type LicenseFeature = 
+ record {
+   description: text;
+   featureType: text;
+   id: text;
+   image: opt ExternalBlob;
+   isActive: bool;
+   isPremium: bool;
+   licenseReferenceName: text;
+   name: text;
+   priceInCents: nat;
+ };
+type LicenseBundle = 
+ record {
+   alaCarteSumCents: nat;
+   badge: text;
+   bullets: vec text;
+   bundleId: text;
+   disclaimer: text;
+   featureIds: vec text;
+   headline: text;
+   isActive: bool;
+   name: text;
+   priceInCentsAnnual: nat;
+   saveTextOverride: text;
+   savingsCents: nat;
+   sortOrder: nat;
+ };
+type InstallerDownloadResult = 
+ variant {
+   err: text;
+   ok: record {
+         file: ExternalBlob;
+         fileName: text;
+         mimeType: text;
+       };
+ };
+type ExternalBlob = blob;
+type EntitlementWorkflowStep = 
+ record {
+   message: text;
+   step: text;
+   stripeSessionId: opt text;
+   timestamp: int;
+ };
+type EntitlementStatusView = 
+ record {
+   activatedAtIso: opt text;
+   activationDeadlineIso: text;
+   activationNonce: text;
+   email: text;
+   entitlementId: text;
+   expiresIso: opt text;
+   features: vec text;
+   machineBindingDigest: opt text;
+   status: text;
+ };
+type EntitlementRegistryEntry = 
+ record {
+   entitlement: EntitlementStatusView;
+   linkedPurchases: vec LinkedPremiumPurchaseView;
+   purchasedAtIso: text;
+   updatedAtIso: text;
+   workflowSteps: vec EntitlementWorkflowStep;
+ };
+type EmailSendResult = 
+ variant {
+   err: text;
+   ok: text;
+ };
+type EmailLog = 
+ record {
+   deliveryStatus: text;
+   email: text;
+   errorMessage: opt text;
+   sentTimestamp: int;
+   subject: text;
+ };
+type EmailAutomationSettings = 
+ record {
+   emailBody: text;
+   emailSubject: text;
+ };
+type AuditEntry = 
+ record {
+   action: text;
+   actorEmail: text;
+   actorRole: text;
+   id: text;
+   target: text;
+   timestamp: int;
+ };
+type AdminStatus = 
+ variant {
+   active;
+   deactivated;
+   pending;
+ };
+type AdminRole = 
+ variant {
+   administrator;
+   featuresManager;
+   licenseGenerator;
+   superAdmin;
+ };
+type AdminRecordPublic = 
+ record {
+   email: text;
+   id: text;
+   invitedAt: int;
+   invitedBy: text;
+   isProtected: bool;
+   lastLogin: opt int;
+   name: text;
+   "principal": opt principal;
+   role: AdminRole;
+   status: AdminStatus;
+ };
+type ActivateEntitlementRequest = 
+ record {
+   activationNonce: text;
+   entitlementId: text;
+   machineDigest: text;
+ };
+service : {
+  _immutableObjectStorageBlobsAreLive: (hashes: vec blob) -> (vec bool) query;
+  _immutableObjectStorageBlobsToDelete: () -> (vec blob) query;
+  _immutableObjectStorageConfirmBlobDeletion: (blobs: vec blob) -> ();
+  _immutableObjectStorageCreateCertificate: (blobHash: text) ->
+   (_ImmutableObjectStorageCreateCertificateResult);
+  _immutableObjectStorageRefillCashier: (refillInformation:
+   opt _ImmutableObjectStorageRefillInformation) ->
+   (_ImmutableObjectStorageRefillResult);
+  _immutableObjectStorageUpdateGatewayPrincipals: () -> ();
+  _initializeAccessControl: () -> ();
+  activateEntitlement: (request: ActivateEntitlementRequest) ->
+   (variant {
+      err: text;
+      ok: text;
+    });
+  addLicenseBundle: (bundle: LicenseBundle) -> ();
+  addLicenseFeature: (feature: LicenseFeature) -> ();
+  addProduct: (product: Product) -> ();
+  assignCallerUserRole: (user: principal, role: UserRole) -> ();
+  assignSuperAdmin: (email: text) -> (Result);
+  /// One-time admin backfill: create CustomerEntitlement rows from historical premiumPurchases.
+  /// Stable upgrade only blanked PremiumPurchase.entitlementId (DDR-016); it never populated
+  /// entitlementsByEmail. Eligible purchase.status: paid_sent / paid / complete / confirmed
+  /// (fulfillment writes "confirmed" before email; many live rows stay there). Also accept
+  /// paymentConfirmation == "paid" when status is ambiguous. Skips rows that already have a
+  /// non-empty entitlementId. Fresh activation window starts at backfill time so old purchase
+  /// timestamps do not instantly forfeit. Does not re-email licenses.
+  backfillEntitlementsFromPurchases: () ->
+   (variant {
+      err: text;
+      ok:
+       record {
+         created: nat;
+         linked: nat;
+         registrySize: nat;
+         skippedAlreadyLinked: nat;
+         skippedIneligibleStatus: nat;
+         skippedNoFeatures: nat;
+       };
+    });
+  bootstrapSuperAdmin: (name: text, email: text) -> (text);
+  checkAnyPendingInvite: () ->
+   (opt record {
+          email: opt text;
+          hasUnlinked: bool;
+          role: text;
+        }) query;
+  checkMyPendingInvite: () -> (opt record {
+                                     email: text;
+                                     role: text;
+                                   }) query;
+  claimAdminInvite: (email: text, tempPassword: text) -> (Result);
+  claimRoleElevation: (tempPassword: text) -> (Result);
+  claimSuperAdmin: (code: text, name: text, email: text) -> (Result);
+  createCheckoutSession: (items: vec ShoppingItem, successUrl: text,
+   cancelUrl: text) -> (text);
+  deactivateAdmin: (email: text) -> (Result);
+  deleteAdmin: (email: text) -> (Result);
+  deleteEmailLog: (logKey: text) -> ();
+  deleteEmailLogs: (logKeys: vec text) -> ();
+  deleteLicenseBundle: (bundleId: text) -> ();
+  deleteLicenseFeature: (featureId: text) -> ();
+  deleteLicenseRecord: (recordId: text) -> ();
+  deleteLicenseRecords: (recordIds: vec text) -> ();
+  deletePremiumPurchase: (transactionId: text) -> (Result_3);
+  deletePremiumPurchases: (transactionIds: vec text) -> (Result_2);
+  deleteProduct: (productId: text) -> ();
+  deleteTransactionLog: (id: text) -> (bool);
+  deleteTransactionLogs: (ids: vec text) -> (nat);
+  deleteUserSubmission: (email: text) -> ();
+  disableFeature: (featureId: text) -> ();
+  downloadMacInstaller: () -> (InstallerDownloadResult) query;
+  downloadWindowsInstaller: () -> (InstallerDownloadResult) query;
+  elevateAdminRole: (adminId: text, newRole: AdminRole) -> (Result);
+  enableFeature: (featureId: text) -> ();
+  fulfillPaidLicense: (sessionId: text) -> (variant {
+                                              err: text;
+                                              ok: text;
+                                            });
+  generateAndSendPaidLicense: (sessionId: text, signedLicenseJson: text,
+   customerEmail: text, customerName: text, features: vec text, amountTotal:
+   float64) -> (variant {
+                  err: text;
+                  ok: text;
+                });
+  generateLicense: (request: LicenseRequest) -> (text);
+  getActiveFeatures: () -> (vec LicenseFeature) query;
+  getActivePremiumProductNames: () -> (vec text) query;
+  getAllLicenseBundles: () -> (vec LicenseBundle) query;
+  getAuditLog: (limit: nat) -> (vec AuditEntry) query;
+  getCallerUserProfile: () -> (opt UserProfile) query;
+  getCallerUserRole: () -> (UserRole) query;
+  getConfigurationStatus: () ->
+   (record {
+      privateKeyPresent: bool;
+      resendConfigured: bool;
+      stripeConfigured: bool;
+    }) query;
+  getCoreFeatures: () -> (vec LicenseFeature) query;
+  getCustomerEntitlements: (customerEmail: text) ->
+   (vec EntitlementStatusView) query;
+  getEmailAutomationSettings: () -> (EmailAutomationSettings) query;
+  getEmailLogs: () -> (vec EmailLog) query;
+  getEntitlementRegistry: () -> (vec EntitlementRegistryEntry) query;
+  getEntitlementStatus: (entitlementId: text, activationNonce: text) ->
+   (variant {
+      err: text;
+      ok: EntitlementStatusView;
+    }) query;
+  /// Public metadata only (DDR-029) — file names for version display without downloading blobs.
+  getInstallerFileNames: () ->
+   (record {
+      macFileName: opt text;
+      windowsFileName: opt text;
+    }) query;
+  getLicenseBundles: () -> (vec LicenseBundle) query;
+  getLicenseFeatures: () -> (vec LicenseFeature) query;
+  getLicenseRecords: () -> (vec LicenseRecord) query;
+  getLicenseReferenceNames: () -> (vec text) query;
+  getLicensingPolicy: () ->
+   (record {
+      activationWindowDays: int;
+      licenseTermDays: int;
+      machineBindingAlgorithm: text;
+    }) query;
+  getMacInstallerFile: () ->
+   (opt record {
+          file: ExternalBlob;
+          fileName: text;
+          mimeType: text;
+        }) query;
+  getMyAdminRole: () -> (opt text) query;
+  getPremiumFeatures: () -> (vec LicenseFeature) query;
+  getPremiumPurchases: () -> (vec PremiumPurchase) query;
+  getProducts: () -> (vec Product) query;
+  getResendConfiguration: () -> (opt ResendConfiguration) query;
+  getStripeSessionStatus: (sessionId: text) -> (Result_1);
+  getSuperAdminClaimCode: () -> (text) query;
+  getTransactionLogs: () -> (vec TransactionLog) query;
+  getTrialEligibleProductNames: () -> (vec text) query;
+  getTrialLicenseFile: () -> (opt ExternalBlob) query;
+  getTrialLicensePayload: (email: text) -> (text);
+  getUserProfile: (user: principal) -> (opt UserProfile) query;
+  getUserSubmissions: () -> (vec UserSubmission) query;
+  getWindowsInstallerFile: () ->
+   (opt record {
+          file: ExternalBlob;
+          fileName: text;
+          mimeType: text;
+        }) query;
+  incrementDownloadCount: (email: text) -> ();
+  initializeDefaultLicenseBundles: () -> ();
+  initializeDefaultPremiumFeatures: () -> ();
+  inviteAdmin: (name: text, email: text, role: AdminRole) -> (Result);
+  isAdminByRole: () -> (bool) query;
+  isCallerAdmin: () -> (bool) query;
+  isStripeConfigured: () -> (bool) query;
+  issueTrialLicenseAndEmail: (name: text, email: text) ->
+   (variant {
+      err: text;
+      ok: text;
+    });
+  listAdmins: () -> (vec AdminRecordPublic);
+  logEmail: (email: text, subject: text, deliveryStatus: text) -> ();
+  migrateFeatureNames: () -> (text);
+  reactivateAdmin: (email: text) -> (Result);
+  recordLicense: (licenseJson: text, recipientEmail: text, features:
+   vec text, expirationDate: int, deliveryStatus: text) -> ();
+  recordPremiumPurchase: (email: text, transactionId: text, amount: nat,
+   status: text, customerName: text, stripeSessionId: text,
+   paymentConfirmation: text, features: vec text) -> ();
+  regenerateSuperAdminClaimCode: () -> (Result);
+  removeFeatureImage: (featureId: text) -> ();
+  resendPurchaseLicense: (transactionId: text, recipientEmail: text) ->
+   (variant {
+      err: text;
+      ok: text;
+    });
+  resendTrialLicense: (email: text) -> (variant {
+                                          err: text;
+                                          ok: text;
+                                        });
+  /// Admin support: clear machine binding and return entitlement to pending_activation
+  /// with a fresh activation window + nonce (so the customer can re-activate on a device).
+  /// Does not delete the registry row or linked purchases. One row remains per email.
+  resetEntitlementActivation: (entitlementId: text) ->
+   (variant {
+      err: text;
+      ok: EntitlementStatusView;
+    });
+  saveCallerUserProfile: (profile: UserProfile) -> ();
+  sendManualLicense: (recipientName: text, recipientEmail: text,
+   selectedFeatures: vec text) -> (EmailSendResult);
+  sendSignedPaidLicense: (sessionId: text, signedLicenseJson: text,
+   customerEmail: text, features: vec text) ->
+   (variant {
+      err: text;
+      ok: text;
+    });
+  sendSignedTrialLicenseEmail: (email: text, name: text, signedLicenseJson:
+   text) -> (bool);
+  sendTrialLicenseEmail: (name: text, email: text, signedLicenseJson:
+   text) -> ();
+  setResendConfiguration: (config: ResendConfiguration) -> ();
+  setStripeConfiguration: (config: StripeConfiguration) -> ();
+  submitUser: (name: text, email: text) ->
+   (variant {
+      alreadySubmitted: record {email: text;};
+      newUser: record {message: text;};
+    });
+  testResendConnection: () -> (EmailSendResult);
+  transform: (input: TransformationInput) -> (TransformationOutput) query;
+  updateAdminRole: (email: text, newRole: AdminRole) -> (Result);
+  updateBundleStatus: (bundleId: text, isActive: bool) -> ();
+  updateEmailAutomationSettings: (settings: EmailAutomationSettings) -> ();
+  updateFeatureStatus: (featureId: text, isActive: bool) -> ();
+  updateLicenseBundle: (bundle: LicenseBundle) -> ();
+  updateLicenseFeature: (feature: LicenseFeature) -> ();
+  updateProduct: (product: Product) -> ();
+  updatePurchaseFeatures: (transactionId: text, features: vec text) ->
+   (variant {
+      err: text;
+      ok;
+    });
+  updateResendServiceName: (serviceName: text) -> ();
+  uploadFeatureImage: (featureId: text, image: ExternalBlob) -> ();
+  uploadMacInstaller: (file: ExternalBlob, fileName: text) -> (bool);
+  uploadPrivateKeyFile: (file: ExternalBlob) -> ();
+  uploadPrivateKeyPem: (pem: text) -> ();
+  uploadTrialLicenseFile: (file: ExternalBlob) -> ();
+  uploadWindowsInstaller: (file: ExternalBlob, fileName: text) -> (bool);
+}

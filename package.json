@@ -1,0 +1,29 @@
+{
+  "name": "bamm-dfx-web-store",
+  "type": "module",
+  "engines": {
+    "node": ">=16.0.0",
+    "pnpm": ">=7.0.0",
+    "npm": "please use pnpm"
+  },
+  "scripts": {
+    "validate:mops-lock": "node scripts/validate-mops-lock.mjs",
+    "validate:caffeine-config": "node scripts/validate-caffeine-config.mjs",
+    "sync:caffeine-src": "node scripts/sync-caffeine-src-toolchain.mjs",
+    "validate:frontend-preflight": "node scripts/validate-frontend-preflight.mjs",
+    "release:caffeine": "node scripts/caffeine-release.mjs",
+    "build": "node scripts/validate-mops-lock.mjs && pnpm -r --if-present run build",
+    "typecheck": "node scripts/validate-mops-lock.mjs && pnpm -r --if-present run typecheck",
+    "check": "node scripts/validate-mops-lock.mjs && pnpm -r --if-present run check",
+    "fix": "pnpm -r --if-present run fix",
+    "bindgen": "caffeine-bindgen --did-file ./src/backend/dist/backend.did --out-dir ./src/frontend/src --actor-interface-file --force"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.4"
+  },
+  "dependencies": {
+    "@caffeineai/bindgen": "^0.2.1",
+    "@caffeineai/core-infrastructure": "^0.3.0"
+  },
+  "description": "BAMM dfx Web Store — parallel IC storefront (dfx), independent of Caffeine production"
+}

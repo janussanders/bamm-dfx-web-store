@@ -1,0 +1,83 @@
+{
+  "version": "2026.06.18",
+  "exportedAt": "2026-07-03T18:21:53.404Z",
+  "source": "packages/bamm-contracts/data/bundles.json",
+  "bundles": [
+    {
+      "bundleId": "complete_annual",
+      "name": "BAMM Complete",
+      "priceInCentsAnnual": 34999,
+      "featureIds": [
+        "paycheck_budget",
+        "goals",
+        "tx_simulator",
+        "database_management",
+        "trades"
+      ],
+      "licenseReferenceNames": [
+        "Paycheck Budget",
+        "Goals",
+        "Tx Simulator",
+        "Database Management",
+        "Trades"
+      ],
+      "alaCarteSumCents": 43995,
+      "savingsCents": 8996,
+      "isActive": true
+    },
+    {
+      "bundleId": "planner_tax_annual",
+      "name": "Planner + Tax",
+      "priceInCentsAnnual": 16999,
+      "featureIds": [
+        "paycheck_budget",
+        "goals",
+        "tx_simulator"
+      ],
+      "licenseReferenceNames": [
+        "Paycheck Budget",
+        "Goals",
+        "Tx Simulator"
+      ],
+      "alaCarteSumCents": 18997,
+      "savingsCents": 1998,
+      "isActive": true
+    },
+    {
+      "bundleId": "pro_annual",
+      "name": "Pro Bundle",
+      "priceInCentsAnnual": 32999,
+      "featureIds": [
+        "paycheck_budget",
+        "goals",
+        "tx_simulator",
+        "trades"
+      ],
+      "licenseReferenceNames": [
+        "Paycheck Budget",
+        "Goals",
+        "Tx Simulator",
+        "Trades"
+      ],
+      "alaCarteSumCents": 38996,
+      "savingsCents": 5997,
+      "isActive": true
+    },
+    {
+      "bundleId": "planner_annual",
+      "name": "Planner Bundle",
+      "priceInCentsAnnual": 3499,
+      "featureIds": [
+        "paycheck_budget",
+        "goals"
+      ],
+      "licenseReferenceNames": [
+        "Paycheck Budget",
+        "Goals"
+      ],
+      "alaCarteSumCents": 3998,
+      "savingsCents": 499,
+      "isActive": true
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "version": "2026.06.18",
+  "exportedAt": "2026-07-03T18:21:53.404Z",
+  "source": "IC Features Management (production targets — update when admin changes)",
+  "features": [
+    {
+      "productId": "paycheck_budget",
+      "name": "Paycheck Budget",
+      "licenseReferenceName": "Paycheck Budget",
+      "priceInCents": 999,
+      "isActive": true,
+      "trialEligible": true
+    },
+    {
+      "productId": "goals",
+      "name": "Goals",
+      "licenseReferenceName": "Goals",
+      "priceInCents": 2999,
+      "isActive": true,
+      "trialEligible": true
+    },
+    {
+      "productId": "tx_simulator",
+      "name": "Tx Simulator",
+      "licenseReferenceName": "Tx Simulator",
+      "priceInCents": 14999,
+      "isActive": true,
+      "trialEligible": false
+    },
+    {
+      "productId": "migration-management",
+      "name": "Database Management",
+      "licenseReferenceName": "Database Management",
+      "priceInCents": 4999,
+      "isActive": true,
+      "trialEligible": true
+    },
+    {
+      "productId": "trades",
+      "name": "Trades",
+      "licenseReferenceName": "Trades",
+      "priceInCents": 19999,
+      "isActive": true,
+      "trialEligible": false
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+name: BAMM contracts alignment
+
+on:
+  pull_request:
+    paths:
+      - 'contracts/canister-features.snapshot.json'
+      - 'contracts/canister-bundles.snapshot.json'
+      - '.github/workflows/bamm-contracts-alignment.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'contracts/canister-features.snapshot.json'
+      - 'contracts/canister-bundles.snapshot.json'
+
+# Pin to a BAMM branch or tag that contains packages/bamm-contracts bundle rollout.
+env:
+  BAMM_CONTRACTS_REF: feat/tiered-bundle-licensing-rollout
+
+jobs:
+  validate-snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout e-commerce
+        uses: actions/checkout@v4
+
+      - name: Checkout BAMM contracts
+        uses: actions/checkout@v4
+        with:
+          repository: janussanders/BAMM
+          ref: ${{ env.BAMM_CONTRACTS_REF }}
+          path: bamm-contracts-src
+          sparse-checkout: |
+            packages/bamm-contracts
+          sparse-checkout-cone-mode: true
+
+      - name: Validate snapshots against @bamm/contracts
+        run: |
+          node bamm-contracts-src/packages/bamm-contracts/scripts/validate-ecommerce-snapshot.mjs \
+            "${{ github.workspace }}/contracts/canister-features.snapshot.json" \
+            "${{ github.workspace }}/contracts/canister-bundles.snapshot.json"

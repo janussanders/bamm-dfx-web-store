@@ -1,0 +1,50 @@
+---
+description: Caffeine build + agentic workflow lock (DDR-026 / DDR-027)
+globs:
+  - caffeine.toml
+  - src/backend/caffeine.toml
+  - src/backend/mops.toml
+  - src/frontend/caffeine.toml
+  - src/frontend/package.json
+  - scripts/validate-caffeine-config.mjs
+  - AGENTS.md
+  - DDR/DDR-018-Caffeine-Import-Runbook.md
+  - DDR/DDR-027-Caffeine-Agentic-Workspace-Workflow.md
+alwaysApply: true
+---
+
+# Caffeine build + agentic lock (DDR-026 / DDR-027)
+
+## Build contract
+
+- Backend: sibling `src/backend/mops.toml` (`--default-persistent-actors`) + bare `mops install` / `mops build` / `pnpm bindgen`
+- Frontend: `rm -rf dist` + `pnpm build`
+- Workspace: `include = ["src/**"]` only
+- **Forbidden:** `cd ..` for mops; sibling preflight `.mjs`; `scripts/` paths in caffeine.toml
+
+## Agentic workspace (DDR-027)
+
+| Action | Who |
+|--------|-----|
+| GitHub import | Operator UI only |
+| `redeploy_draft` for `ucnbj-nqaaa-aaaab-aajua-cai` | Operator confirms → platform |
+| Build / deploy draft | Agent — **build only** |
+| Production reinstall | **Never** for draft IC0503 |
+
+## Agents must not
+
+- Claim they imported from GitHub
+- “Fix” IC0503 by editing EntitlementMigration or adding entitlementId fields
+- Recommend revert to Caffeine “Version 132” as the code fix
+- Reinstall production to clear draft IC0503
+- Edit locked caffeine/mops files without a new DDR
+
+## If IC0503 on draft
+
+1. Stop source edits
+2. Request `redeploy_draft` (draft backend `ucnbj-nqaaa-aaaab-aajua-cai`)
+3. Then build only
+
+Import tag: **`v133.0.14`**
+
+Specs: `DDR/DDR-026-Caffeine-Sibling-Mops-Toml.md`, `DDR/DDR-027-Caffeine-Agentic-Workspace-Workflow.md`

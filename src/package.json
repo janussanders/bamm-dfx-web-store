@@ -1,0 +1,12 @@
+{
+  "name": "@caffeine/template-app-src",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bindgen": "caffeine-bindgen --did-file ./backend/dist/backend.did --out-dir ./frontend/src --actor-interface-file --force"
+  },
+  "dependencies": {
+    "@caffeineai/bindgen": "^0.2.1",
+    "@caffeineai/core-infrastructure": "^0.3.0"
+  }
+}

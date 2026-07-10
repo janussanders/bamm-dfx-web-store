@@ -1,0 +1,24 @@
+{
+  "overview": "BAMM is a privacy-first personal finance platform with a secure e-commerce site for license management, premium feature purchases, and installer distribution, featuring a full four-tier admin panel with RBAC.",
+  "features": [
+    "RSA-signed license generation and email delivery",
+    "Stripe-powered premium feature checkout",
+    "Four-tier RBAC admin panel: Super Admin, Administrator, Features Manager, License Generator",
+    "Internet Identity authentication with Google, Apple, and Microsoft sign-in",
+    "Installer management for Mac and Windows downloads",
+    "Email delivery logs with transaction detail modals",
+    "Admin invite workflow with temp password via RESEND",
+    "One-time Super Admin claim code with regeneration",
+    "Audit log with download for all admin roles"
+  ],
+  "category": "e-commerce",
+  "tags": [
+    "finance",
+    "licensing",
+    "admin-panel",
+    "rbac",
+    "stripe",
+    "internet-identity"
+  ],
+  "last_updated": "2026-06-01T22:20:25.747Z"
+}

@@ -1,0 +1,12 @@
+manifest_version = "0.1.0"
+
+[project]
+id = "my-app"
+name = "my-app"
+
+[workspace]
+# Caffeine VM materializes src/** only (DDR-022/023). Do not rely on repo-root scripts/.
+include = ["src/**"]
+
+[canisters.frontend]
+depends_on = ["backend"]

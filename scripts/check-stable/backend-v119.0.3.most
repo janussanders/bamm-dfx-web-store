@@ -1,0 +1,194 @@
+// Version: 1.0.0
+type AdminRecord__862792469 =
+  {
+    email : Text;
+    id : Text;
+    invitedAt : Int;
+    invitedBy : Text;
+    isProtected : Bool;
+    lastLogin : ?Int;
+    name : Text;
+    principal : ?Principal;
+    role : AdminRole__550079881;
+    status : AdminStatus__931994384;
+    tempPasswordExpiry : ?Int;
+    tempPasswordHash : ?Text
+  };
+type AdminRole__550079881 =
+  {#administrator; #featuresManager; #licenseGenerator; #superAdmin};
+type AdminStatus__931994384 = {#active; #deactivated; #pending};
+type AuditEntry__849002978 =
+  {
+    action : Text;
+    actorEmail : Text;
+    actorRole : Text;
+    id : Text;
+    target : Text;
+    timestamp : Int
+  };
+type Data__80296667<K, V> =
+  {var count : Nat__1040412405; kvs : [var ?(K, V)]};
+type EmailLog__577630079 =
+  {
+    deliveryStatus : Text;
+    email : Text;
+    errorMessage : ?Text;
+    sentTimestamp : Int;
+    subject : Text
+  };
+type ExternalBlob__671167343 = Blob;
+type Internal__41346355<K, V> =
+  {children : [var ?Node__1000929467<K, V>]; data : Data__80296667<K, V>};
+type Leaf__712614010<K, V> = {data : Data__80296667<K, V>};
+type LicenseFeature__846268300 =
+  {
+    description : Text;
+    featureType : Text;
+    id : Text;
+    image : ?ExternalBlob__671167343;
+    isActive : Bool;
+    isPremium : Bool;
+    licenseReferenceName : Text;
+    name : Text;
+    priceInCents : Nat
+  };
+type LicenseRecord__257743349 =
+  {
+    deliveryStatus : Text;
+    expirationDate : Int;
+    features : [Text];
+    generatedTimestamp : Int;
+    licenseJson : Text;
+    recipientEmail : Text
+  };
+type Map__222667396<K, V> = Map__912772452<K, V>;
+type Map__709709801<K, V> =
+  {var root : Node__1000929467<K, V>; var size : Nat__1040412405};
+type Map__912772452<K, V> = Map__709709801<K, V>;
+type Nat__1040412405 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Node__1000929467<K, V> =
+  {#internal : Internal__41346355<K, V>; #leaf : Leaf__712614010<K, V>};
+type PipelineStep__370299827 = {message : Text; step : Text; timestamp : Int};
+type PremiumPurchase__103659187 =
+  {
+    amount : Nat;
+    customerName : Text;
+    email : Text;
+    features : [Text];
+    paymentConfirmation : Text;
+    status : Text;
+    stripeSessionId : Text;
+    timestamp : Int;
+    transactionId : Text
+  };
+type Product__853085059 =
+  {
+    currency : Text;
+    description : Text;
+    id : Text;
+    imageUrl : ?Text;
+    isActive : Bool;
+    isPremium : Bool;
+    name : Text;
+    priceInCents : Nat
+  };
+type ResendConfiguration__638522522 =
+  {apiKey : Text; baseUrl : Text; senderEmail : Text; serviceName : Text};
+type StripeConfiguration__87721349 =
+  {allowedCountries : [Text]; secretKey : Text};
+type TransactionLog__154839357 =
+  {
+    amountPaid : Text;
+    createdAt : Int;
+    customerName : Text;
+    features : [Text];
+    id : Text;
+    licenseStatus : Text;
+    pipelineSteps : [PipelineStep__370299827];
+    recipientEmail : Text;
+    transactionId : Text;
+    updatedAt : Int
+  };
+type UserProfile__491224006 = {email : Text; name : Text};
+type UserRole__1073662873 = {#admin; #guest; #user};
+type UserSubmission__1047260070 =
+  {downloadCount : Nat; email : Text; name : Text; timestamp : Int};
+actor {
+  stable accessControlState :
+    {
+      var adminAssigned : Bool;
+      userRoles : Map__222667396<Principal, UserRole__1073662873>
+    };
+  stable var adminBootstrapped : Bool;
+  stable var adminRecords :
+    {
+      var root : Node__1000929467<Text, AdminRecord__862792469>;
+      var size : Nat__1040412405
+    };
+  stable var auditLogEntries :
+    {
+      var blockIndex : Nat__1040412405;
+      var blocks : [var [var ?AuditEntry__849002978]];
+      var elementIndex : Nat__1040412405
+    };
+  stable defaultSenderEmail : Text;
+  stable var emailAutomationSettings :
+    {emailBody : Text; emailSubject : Text};
+  stable var emailLogs :
+    {
+      var root : Node__1000929467<Text, EmailLog__577630079>;
+      var size : Nat__1040412405
+    };
+  stable var licenseFeatures :
+    {
+      var root : Node__1000929467<Text, LicenseFeature__846268300>;
+      var size : Nat__1040412405
+    };
+  stable var licenseRecords :
+    {
+      var root : Node__1000929467<Text, LicenseRecord__257743349>;
+      var size : Nat__1040412405
+    };
+  stable var macInstallerFile :
+    ?{file : ExternalBlob__671167343; fileName : Text; mimeType : Text};
+  stable var premiumPurchases :
+    {
+      var root : Node__1000929467<Text, PremiumPurchase__103659187>;
+      var size : Nat__1040412405
+    };
+  stable var privateKeyFile : ?ExternalBlob__671167343;
+  stable var products :
+    {
+      var root : Node__1000929467<Text, Product__853085059>;
+      var size : Nat__1040412405
+    };
+  stable var resendConfig : ?ResendConfiguration__638522522;
+  stable var sessionOwners :
+    {
+      var root : Node__1000929467<Text, Principal>;
+      var size : Nat__1040412405
+    };
+  stable var stripeConfig : ?StripeConfiguration__87721349;
+  stable var superAdminClaimCode : Text;
+  stable var superAdminClaimUsed : Bool;
+  stable var transactionLogs :
+    {
+      var root : Node__1000929467<Text, TransactionLog__154839357>;
+      var size : Nat__1040412405
+    };
+  stable trialExcludedFeatures : [Text];
+  stable var trialLicenseFile : ?ExternalBlob__671167343;
+  stable var userProfiles :
+    {
+      var root : Node__1000929467<Principal, UserProfile__491224006>;
+      var size : Nat__1040412405
+    };
+  stable var userSubmissions :
+    {
+      var root : Node__1000929467<Text, UserSubmission__1047260070>;
+      var size : Nat__1040412405
+    };
+  stable var windowsInstallerFile :
+    ?{file : ExternalBlob__671167343; fileName : Text; mimeType : Text}
+};

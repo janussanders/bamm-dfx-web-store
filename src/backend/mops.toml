@@ -1,0 +1,32 @@
+[package]
+name = "backend"
+version = "0.1.0"
+
+[build]
+outputDir = "dist"
+args = [ "--release" ]
+
+[canisters.backend]
+main = "main.mo"
+
+[canisters.backend.check-stable]
+path = "caffeine-check-stable.most"
+
+[toolchain]
+moc = "1.8.2"
+lintoko = "0.10.0"
+
+[lint]
+extends = true
+
+[moc]
+args = [ "--default-persistent-actors", "--actor-idl=system-idl", "--implicit-package=core", "-no-check-ir", "-E=M0236,M0223,M0237,M0254", "-W=M0235", "-A=M0241" ]
+
+[dependencies]
+core = "2.5.0"
+base = "0.16.0"
+caffeineai-authorization = "0.1.1"
+caffeineai-object-storage = "0.1.2"
+caffeineai-stripe = "0.1.1"
+caffeineai-http-outcalls = "0.1.1"
+sha2 = "0.1.14"
