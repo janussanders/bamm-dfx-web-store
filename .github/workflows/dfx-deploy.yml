@@ -94,9 +94,12 @@ jobs:
           DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
           DFX_NETWORK: ${{ inputs.network }}
           DFX_TELEMETRY_DISABLED: '1'
+          # CI uses imported PEM (plaintext on disk) — required for Actions
+          DFX_WARNING: '-mainnet_plaintext_identity'
         run: |
           set -euo pipefail
           export PATH="$HOME/.local/share/dfx/bin:$PATH"
+          export DFX_WARNING=-mainnet_plaintext_identity
           if [ -z "${DFX_IDENTITY_PEM:-}" ]; then
             echo "::error::DFX_IDENTITY_PEM secret is required for deploy"
             exit 1
@@ -109,7 +112,8 @@ jobs:
             > "$HOME/.config/dfx/identity/ci/identity.json"
           dfx identity use ci
           dfx identity get-principal
-          dfx deploy --network "$DFX_NETWORK" --yes
+          dfx cycles balance --network "$DFX_NETWORK" || true
+          dfx deploy --network "$DFX_NETWORK" --yes --identity ci
           BACKEND_ID=$(dfx canister id backend --network "$DFX_NETWORK")
           FRONTEND_ID=$(dfx canister id frontend --network "$DFX_NETWORK")
           {
