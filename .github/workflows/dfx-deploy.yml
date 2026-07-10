@@ -73,9 +73,19 @@ jobs:
 
       - name: Install dfx
         if: ${{ inputs.deploy }}
+        env:
+          DFXVM_INIT_YES: 'true'
         run: |
+          set -euo pipefail
           sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
-          echo "$HOME/bin" >> "$GITHUB_PATH"
+          # Linux CI path for dfxvm
+          echo "$HOME/.local/share/dfx/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/share/dfx/bin:$PATH"
+          # macOS-style path fallback
+          if [ -f "$HOME/Library/Application Support/org.dfinity.dfx/env" ]; then
+            # shellcheck disable=SC1091
+            source "$HOME/Library/Application Support/org.dfinity.dfx/env"
+          fi
           dfx --version
 
       - name: Import identity and deploy
@@ -83,18 +93,22 @@ jobs:
         env:
           DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
           DFX_NETWORK: ${{ inputs.network }}
+          DFX_TELEMETRY_DISABLED: '1'
         run: |
           set -euo pipefail
+          export PATH="$HOME/.local/share/dfx/bin:$PATH"
           if [ -z "${DFX_IDENTITY_PEM:-}" ]; then
             echo "::error::DFX_IDENTITY_PEM secret is required for deploy"
             exit 1
           fi
           mkdir -p "$HOME/.config/dfx/identity/ci"
           printf '%s\n' "$DFX_IDENTITY_PEM" > "$HOME/.config/dfx/identity/ci/identity.pem"
-          dfx identity use ci || dfx identity new ci --storage-mode=plaintext
-          # identity new may ignore existing pem — force
-          cp "$HOME/.config/dfx/identity/ci/identity.pem" "$HOME/.config/dfx/identity/ci/identity.pem.bak" 2>/dev/null || true
+          chmod 600 "$HOME/.config/dfx/identity/ci/identity.pem"
+          # Mark as plaintext so dfx accepts the imported PEM without keyring
+          printf '%s\n' '{"hsm":null,"encryption":null,"keyring_identity_suffix":null}' \
+            > "$HOME/.config/dfx/identity/ci/identity.json"
           dfx identity use ci
+          dfx identity get-principal
           dfx deploy --network "$DFX_NETWORK" --yes
           BACKEND_ID=$(dfx canister id backend --network "$DFX_NETWORK")
           FRONTEND_ID=$(dfx canister id frontend --network "$DFX_NETWORK")
@@ -105,7 +119,6 @@ jobs:
             echo "- **Frontend:** \`$FRONTEND_ID\`"
             echo "- **Agentic URL:** https://$FRONTEND_ID.icp0.io"
           } >> "$GITHUB_STEP_SUMMARY"
-          echo "FRONTEND_CANISTER_ID=$FRONTEND_ID" >> "$GITHUB_ENV"
 
       - name: Build-only summary
         if: ${{ !inputs.deploy }}
