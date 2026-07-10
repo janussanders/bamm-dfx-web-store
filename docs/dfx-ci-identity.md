@@ -21,7 +21,15 @@ chmod +x scripts/setup-dfx-ci-secret.sh
 ./scripts/setup-dfx-ci-secret.sh
 ```
 
+Creates `bamm-dfx-ci` with **keyring** storage (not plaintext — avoids the insecure `identity.json` warning). Exports PEM only into gitignored `.secrets/` for GitHub upload.
+
 Requires: `dfx`, `gh` (authenticated: `gh auth login`).
+
+If keyring is unavailable:
+
+```bash
+DFX_CI_STORAGE_MODE=password-protected ./scripts/setup-dfx-ci-secret.sh
+```
 
 Re-upload only:
 
