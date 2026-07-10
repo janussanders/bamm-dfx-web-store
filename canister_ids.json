@@ -1,5 +1,8 @@
 {
   "backend": {
     "ic": "5z2v5-uqaaa-aaaao-bbeaq-cai"
+  },
+  "frontend": {
+    "ic": "5xyyv-paaaa-aaaao-bbebq-cai"
   }
 }
