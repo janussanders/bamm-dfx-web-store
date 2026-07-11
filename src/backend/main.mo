@@ -298,10 +298,30 @@ actor BAMM {
     #err : Text;
   };
 
+  /// DDR-003: chunked installer metadata (survives upgrades; bytes live in `chunks`).
+  public type InstallerMeta = {
+    fileName : Text;
+    mimeType : Text;
+    totalSize : Nat;
+    chunkCount : Nat;
+  };
+
+  public type InstallerChunkResult = {
+    #ok : {
+      chunk : Blob;
+      chunkIndex : Nat;
+      chunkCount : Nat;
+    };
+    #err : Text;
+  };
+
   public type EmailSendResult = {
     #ok : Text;
     #err : Text;
   };
+
+  // Max bytes per ingress/query chunk (under IC ~2–3 MiB message limits, with candid headroom).
+  let installerChunkMaxBytes : Nat = 1_500_000;
 
   // Data storage
   var userSubmissions = Map.empty<Text, UserSubmission>();
@@ -374,7 +394,7 @@ actor BAMM {
     serviceName = "BAMM_Email";
   };
 
-  // Installer files with metadata
+  // Legacy single-blob installers (pre-chunking). Kept for upgrade compatibility; new uploads use *Store.
   var macInstallerFile : ?{
     file : Blob;
     fileName : Text;
@@ -386,6 +406,38 @@ actor BAMM {
     fileName : Text;
     mimeType : Text;
   } = null;
+
+  // DDR-003: persistent chunked installers (--default-persistent-actors → survive canister upgrades).
+  var macInstallerStore : ?{
+    fileName : Text;
+    mimeType : Text;
+    totalSize : Nat;
+    chunks : [Blob];
+  } = null;
+
+  var windowsInstallerStore : ?{
+    fileName : Text;
+    mimeType : Text;
+    totalSize : Nat;
+    chunks : [Blob];
+  } = null;
+
+  // In-progress chunked upload sessions (also persistent so a retry can resume after a failed chunk).
+  var macUploadActive : Bool = false;
+  var macUploadFileName : Text = "";
+  var macUploadMime : Text = "";
+  var macUploadTotalSize : Nat = 0;
+  var macUploadTotalChunks : Nat = 0;
+  var macUploadReceived : Nat = 0;
+  var macUploadChunks = Map.empty<Nat, Blob>();
+
+  var windowsUploadActive : Bool = false;
+  var windowsUploadFileName : Text = "";
+  var windowsUploadMime : Text = "";
+  var windowsUploadTotalSize : Nat = 0;
+  var windowsUploadTotalChunks : Nat = 0;
+  var windowsUploadReceived : Nat = 0;
+  var windowsUploadChunks = Map.empty<Nat, Blob>();
 
   // ── RBAC Helper Functions ────────────────────────────────────────────────
 
@@ -3575,24 +3627,199 @@ actor BAMM {
     result;
   };
 
-  // Mac installer file management
-  public shared ({ caller }) func uploadMacInstaller(file : Blob, fileName : Text) : async Bool {
+  // ── Installer helpers (DDR-003 chunked + persistent) ─────────────────────
+
+  func requireInstallerAdmin(caller : Principal) {
     if (not (isAdmin(caller))) {
-      Runtime.trap("Unauthorized: Only admins can upload Mac installer files");
+      Runtime.trap("Unauthorized: Only admins can manage installer files");
     };
     if (adminBootstrapped) { ignore requireAdminRole(caller, #administrator) };
+  };
 
-    // Validate file extension
+  func buildChunkArray(chunkMap : Map.Map<Nat, Blob>, totalChunks : Nat) : ?[Blob] {
+    if (totalChunks == 0) { return null };
+    var out : [Blob] = [];
+    var i : Nat = 0;
+    while (i < totalChunks) {
+      switch (chunkMap.get(i)) {
+        case null { return null };
+        case (?blob) { out := out.concat([blob]) };
+      };
+      i += 1;
+    };
+    ?out;
+  };
+
+  func clearMacUploadSession() {
+    macUploadActive := false;
+    macUploadFileName := "";
+    macUploadMime := "";
+    macUploadTotalSize := 0;
+    macUploadTotalChunks := 0;
+    macUploadReceived := 0;
+    macUploadChunks := Map.empty<Nat, Blob>();
+  };
+
+  func clearWindowsUploadSession() {
+    windowsUploadActive := false;
+    windowsUploadFileName := "";
+    windowsUploadMime := "";
+    windowsUploadTotalSize := 0;
+    windowsUploadTotalChunks := 0;
+    windowsUploadReceived := 0;
+    windowsUploadChunks := Map.empty<Nat, Blob>();
+  };
+
+  public query func getInstallerChunkMaxBytes() : async Nat {
+    installerChunkMaxBytes;
+  };
+
+  // Mac installer file management
+  /// Legacy single-shot upload — only for files ≤ chunk max. Prefer begin/chunk/finalize for DMG/EXE.
+  public shared ({ caller }) func uploadMacInstaller(file : Blob, fileName : Text) : async Bool {
+    requireInstallerAdmin(caller);
     if (not fileName.endsWith(#text ".dmg")) {
       Runtime.trap("Invalid file type. Only .dmg files are allowed for Mac installer.");
     };
-
-    macInstallerFile := ?{
-      file;
+    if (file.size() > installerChunkMaxBytes) {
+      Runtime.trap(
+        "File too large for single-shot upload (" # file.size().toText() # " bytes). " #
+        "Use beginMacInstallerUpload / uploadMacInstallerChunk / finalizeMacInstallerUpload " #
+        "(max " # installerChunkMaxBytes.toText() # " bytes per chunk)."
+      );
+    };
+    macInstallerStore := ?{
       fileName;
       mimeType = "application/x-apple-diskimage";
+      totalSize = file.size();
+      chunks = [file];
     };
+    macInstallerFile := null;
+    clearMacUploadSession();
     true;
+  };
+
+  public shared ({ caller }) func beginMacInstallerUpload(
+    fileName : Text,
+    totalSize : Nat,
+    totalChunks : Nat,
+  ) : async Result.Result<Text, Text> {
+    requireInstallerAdmin(caller);
+    if (not fileName.endsWith(#text ".dmg")) {
+      return #err("Invalid file type. Only .dmg files are allowed for Mac installer.");
+    };
+    if (totalChunks == 0 or totalSize == 0) {
+      return #err("totalSize and totalChunks must be > 0");
+    };
+    let maxTotal = totalChunks * installerChunkMaxBytes;
+    if (totalSize > maxTotal) {
+      return #err("totalSize exceeds totalChunks × chunk max");
+    };
+    clearMacUploadSession();
+    macUploadActive := true;
+    macUploadFileName := fileName;
+    macUploadMime := "application/x-apple-diskimage";
+    macUploadTotalSize := totalSize;
+    macUploadTotalChunks := totalChunks;
+    #ok("Mac installer upload session started (" # totalChunks.toText() # " chunks)");
+  };
+
+  public shared ({ caller }) func uploadMacInstallerChunk(chunkIndex : Nat, chunk : Blob) : async Result.Result<Text, Text> {
+    requireInstallerAdmin(caller);
+    if (not macUploadActive) {
+      return #err("No active Mac installer upload session — call beginMacInstallerUpload first");
+    };
+    if (chunkIndex >= macUploadTotalChunks) {
+      return #err("chunkIndex out of range");
+    };
+    if (chunk.size() == 0) {
+      return #err("Empty chunk");
+    };
+    if (chunk.size() > installerChunkMaxBytes) {
+      return #err("Chunk exceeds max " # installerChunkMaxBytes.toText() # " bytes");
+    };
+    let replacing = switch (macUploadChunks.get(chunkIndex)) {
+      case null { false };
+      case (?_) { true };
+    };
+    macUploadChunks.add(chunkIndex, chunk);
+    if (not replacing) {
+      macUploadReceived += 1;
+    };
+    #ok(
+      "Mac chunk " # (chunkIndex + 1).toText() # "/" # macUploadTotalChunks.toText() #
+      " stored (" # chunk.size().toText() # " bytes)"
+    );
+  };
+
+  public shared ({ caller }) func finalizeMacInstallerUpload() : async Result.Result<Text, Text> {
+    requireInstallerAdmin(caller);
+    if (not macUploadActive) {
+      return #err("No active Mac installer upload session");
+    };
+    if (macUploadReceived != macUploadTotalChunks) {
+      return #err(
+        "Missing chunks: received " # macUploadReceived.toText() #
+        " of " # macUploadTotalChunks.toText()
+      );
+    };
+    switch (buildChunkArray(macUploadChunks, macUploadTotalChunks)) {
+      case null { return #err("Failed to assemble Mac installer chunks") };
+      case (?chunks) {
+        var assembled : Nat = 0;
+        for (c in chunks.values()) { assembled += c.size() };
+        if (assembled != macUploadTotalSize) {
+          return #err(
+            "Size mismatch: assembled " # assembled.toText() #
+            " vs expected " # macUploadTotalSize.toText()
+          );
+        };
+        macInstallerStore := ?{
+          fileName = macUploadFileName;
+          mimeType = macUploadMime;
+          totalSize = macUploadTotalSize;
+          chunks;
+        };
+        macInstallerFile := null;
+        let name = macUploadFileName;
+        clearMacUploadSession();
+        #ok("Mac installer committed: " # name);
+      };
+    };
+  };
+
+  public shared ({ caller }) func cancelMacInstallerUpload() : async () {
+    requireInstallerAdmin(caller);
+    clearMacUploadSession();
+  };
+
+  public query ({ caller }) func getMacInstallerMeta() : async ?InstallerMeta {
+    if (not (isAdmin(caller))) {
+      Runtime.trap("Unauthorized: Only admins can access Mac installer metadata");
+    };
+    switch (macInstallerStore) {
+      case (?s) {
+        ?{
+          fileName = s.fileName;
+          mimeType = s.mimeType;
+          totalSize = s.totalSize;
+          chunkCount = s.chunks.size();
+        };
+      };
+      case null {
+        switch (macInstallerFile) {
+          case null { null };
+          case (?f) {
+            ?{
+              fileName = f.fileName;
+              mimeType = f.mimeType;
+              totalSize = f.file.size();
+              chunkCount = 1;
+            };
+          };
+        };
+      };
+    };
   };
 
   public query ({ caller }) func getMacInstallerFile() : async ?{
@@ -3603,22 +3830,105 @@ actor BAMM {
     if (not (isAdmin(caller))) {
       Runtime.trap("Unauthorized: Only admins can access Mac installer files");
     };
-    macInstallerFile;
+    // Admin UI only needs metadata; avoid returning multi‑MiB payloads.
+    switch (macInstallerStore) {
+      case (?s) {
+        ?{
+          file = Blob.fromArray([]);
+          fileName = s.fileName;
+          mimeType = s.mimeType;
+        };
+      };
+      case null { macInstallerFile };
+    };
   };
 
-  // Public Mac installer download - accessible to anyone who submitted the form
-  // This is intentionally public as per specification: "Live user download functionality"
+  // Public Mac installer download — legacy single blob (small files / old data only).
   public query func downloadMacInstaller() : async InstallerDownloadResult {
-    switch (macInstallerFile) {
-      case null {
-        #err("Mac installer not available. Please contact support.");
+    switch (macInstallerStore) {
+      case (?s) {
+        if (s.chunks.size() == 1) {
+          #ok({
+            file = s.chunks[0];
+            fileName = s.fileName;
+            mimeType = s.mimeType;
+          });
+        } else {
+          #err(
+            "Mac installer is chunked (" # s.chunks.size().toText() #
+            " parts). Use getPublicMacInstallerMeta + downloadMacInstallerChunk."
+          );
+        };
       };
-      case (?installer) {
+      case null {
+        switch (macInstallerFile) {
+          case null {
+            #err("Mac installer not available. Please contact support.");
+          };
+          case (?installer) {
+            #ok({
+              file = installer.file;
+              fileName = installer.fileName;
+              mimeType = installer.mimeType;
+            });
+          };
+        };
+      };
+    };
+  };
+
+  public query func getPublicMacInstallerMeta() : async ?InstallerMeta {
+    switch (macInstallerStore) {
+      case (?s) {
+        ?{
+          fileName = s.fileName;
+          mimeType = s.mimeType;
+          totalSize = s.totalSize;
+          chunkCount = s.chunks.size();
+        };
+      };
+      case null {
+        switch (macInstallerFile) {
+          case null { null };
+          case (?f) {
+            ?{
+              fileName = f.fileName;
+              mimeType = f.mimeType;
+              totalSize = f.file.size();
+              chunkCount = 1;
+            };
+          };
+        };
+      };
+    };
+  };
+
+  public query func downloadMacInstallerChunk(chunkIndex : Nat) : async InstallerChunkResult {
+    switch (macInstallerStore) {
+      case (?s) {
+        if (chunkIndex >= s.chunks.size()) {
+          return #err("chunkIndex out of range");
+        };
         #ok({
-          file = installer.file;
-          fileName = installer.fileName;
-          mimeType = installer.mimeType;
+          chunk = s.chunks[chunkIndex];
+          chunkIndex;
+          chunkCount = s.chunks.size();
         });
+      };
+      case null {
+        switch (macInstallerFile) {
+          case null {
+            #err("Mac installer not available. Please contact support.");
+          };
+          case (?f) {
+            if (chunkIndex != 0) { return #err("chunkIndex out of range") };
+            #ok({
+              chunk = f.file;
+              chunkIndex = 0;
+              chunkCount = 1;
+            });
+          };
+        };
       };
     };
   };
@@ -3629,35 +3939,172 @@ actor BAMM {
     windowsFileName : ?Text;
   } {
     {
-      macFileName = switch (macInstallerFile) {
-        case null { null };
-        case (?installer) { ?installer.fileName };
+      macFileName = switch (macInstallerStore) {
+        case (?s) { ?s.fileName };
+        case null {
+          switch (macInstallerFile) {
+            case null { null };
+            case (?installer) { ?installer.fileName };
+          };
+        };
       };
-      windowsFileName = switch (windowsInstallerFile) {
-        case null { null };
-        case (?installer) { ?installer.fileName };
+      windowsFileName = switch (windowsInstallerStore) {
+        case (?s) { ?s.fileName };
+        case null {
+          switch (windowsInstallerFile) {
+            case null { null };
+            case (?installer) { ?installer.fileName };
+          };
+        };
       };
     };
   };
 
   // Windows installer file management
   public shared ({ caller }) func uploadWindowsInstaller(file : Blob, fileName : Text) : async Bool {
-    if (not (isAdmin(caller))) {
-      Runtime.trap("Unauthorized: Only admins can upload Windows installer files");
-    };
-    if (adminBootstrapped) { ignore requireAdminRole(caller, #administrator) };
-
-    // Validate file extension
+    requireInstallerAdmin(caller);
     if (not fileName.endsWith(#text ".exe")) {
       Runtime.trap("Invalid file type. Only .exe files are allowed for Windows installer.");
     };
-
-    windowsInstallerFile := ?{
-      file;
+    if (file.size() > installerChunkMaxBytes) {
+      Runtime.trap(
+        "File too large for single-shot upload (" # file.size().toText() # " bytes). " #
+        "Use beginWindowsInstallerUpload / uploadWindowsInstallerChunk / finalizeWindowsInstallerUpload " #
+        "(max " # installerChunkMaxBytes.toText() # " bytes per chunk)."
+      );
+    };
+    windowsInstallerStore := ?{
       fileName;
       mimeType = "application/vnd.microsoft.portable-executable";
+      totalSize = file.size();
+      chunks = [file];
     };
+    windowsInstallerFile := null;
+    clearWindowsUploadSession();
     true;
+  };
+
+  public shared ({ caller }) func beginWindowsInstallerUpload(
+    fileName : Text,
+    totalSize : Nat,
+    totalChunks : Nat,
+  ) : async Result.Result<Text, Text> {
+    requireInstallerAdmin(caller);
+    if (not fileName.endsWith(#text ".exe")) {
+      return #err("Invalid file type. Only .exe files are allowed for Windows installer.");
+    };
+    if (totalChunks == 0 or totalSize == 0) {
+      return #err("totalSize and totalChunks must be > 0");
+    };
+    let maxTotal = totalChunks * installerChunkMaxBytes;
+    if (totalSize > maxTotal) {
+      return #err("totalSize exceeds totalChunks × chunk max");
+    };
+    clearWindowsUploadSession();
+    windowsUploadActive := true;
+    windowsUploadFileName := fileName;
+    windowsUploadMime := "application/vnd.microsoft.portable-executable";
+    windowsUploadTotalSize := totalSize;
+    windowsUploadTotalChunks := totalChunks;
+    #ok("Windows installer upload session started (" # totalChunks.toText() # " chunks)");
+  };
+
+  public shared ({ caller }) func uploadWindowsInstallerChunk(chunkIndex : Nat, chunk : Blob) : async Result.Result<Text, Text> {
+    requireInstallerAdmin(caller);
+    if (not windowsUploadActive) {
+      return #err("No active Windows installer upload session — call beginWindowsInstallerUpload first");
+    };
+    if (chunkIndex >= windowsUploadTotalChunks) {
+      return #err("chunkIndex out of range");
+    };
+    if (chunk.size() == 0) {
+      return #err("Empty chunk");
+    };
+    if (chunk.size() > installerChunkMaxBytes) {
+      return #err("Chunk exceeds max " # installerChunkMaxBytes.toText() # " bytes");
+    };
+    let replacing = switch (windowsUploadChunks.get(chunkIndex)) {
+      case null { false };
+      case (?_) { true };
+    };
+    windowsUploadChunks.add(chunkIndex, chunk);
+    if (not replacing) {
+      windowsUploadReceived += 1;
+    };
+    #ok(
+      "Windows chunk " # (chunkIndex + 1).toText() # "/" # windowsUploadTotalChunks.toText() #
+      " stored (" # chunk.size().toText() # " bytes)"
+    );
+  };
+
+  public shared ({ caller }) func finalizeWindowsInstallerUpload() : async Result.Result<Text, Text> {
+    requireInstallerAdmin(caller);
+    if (not windowsUploadActive) {
+      return #err("No active Windows installer upload session");
+    };
+    if (windowsUploadReceived != windowsUploadTotalChunks) {
+      return #err(
+        "Missing chunks: received " # windowsUploadReceived.toText() #
+        " of " # windowsUploadTotalChunks.toText()
+      );
+    };
+    switch (buildChunkArray(windowsUploadChunks, windowsUploadTotalChunks)) {
+      case null { return #err("Failed to assemble Windows installer chunks") };
+      case (?chunks) {
+        var assembled : Nat = 0;
+        for (c in chunks.values()) { assembled += c.size() };
+        if (assembled != windowsUploadTotalSize) {
+          return #err(
+            "Size mismatch: assembled " # assembled.toText() #
+            " vs expected " # windowsUploadTotalSize.toText()
+          );
+        };
+        windowsInstallerStore := ?{
+          fileName = windowsUploadFileName;
+          mimeType = windowsUploadMime;
+          totalSize = windowsUploadTotalSize;
+          chunks;
+        };
+        windowsInstallerFile := null;
+        let name = windowsUploadFileName;
+        clearWindowsUploadSession();
+        #ok("Windows installer committed: " # name);
+      };
+    };
+  };
+
+  public shared ({ caller }) func cancelWindowsInstallerUpload() : async () {
+    requireInstallerAdmin(caller);
+    clearWindowsUploadSession();
+  };
+
+  public query ({ caller }) func getWindowsInstallerMeta() : async ?InstallerMeta {
+    if (not (isAdmin(caller))) {
+      Runtime.trap("Unauthorized: Only admins can access Windows installer metadata");
+    };
+    switch (windowsInstallerStore) {
+      case (?s) {
+        ?{
+          fileName = s.fileName;
+          mimeType = s.mimeType;
+          totalSize = s.totalSize;
+          chunkCount = s.chunks.size();
+        };
+      };
+      case null {
+        switch (windowsInstallerFile) {
+          case null { null };
+          case (?f) {
+            ?{
+              fileName = f.fileName;
+              mimeType = f.mimeType;
+              totalSize = f.file.size();
+              chunkCount = 1;
+            };
+          };
+        };
+      };
+    };
   };
 
   public query ({ caller }) func getWindowsInstallerFile() : async ?{
@@ -3668,22 +4115,103 @@ actor BAMM {
     if (not (isAdmin(caller))) {
       Runtime.trap("Unauthorized: Only admins can access Windows installer files");
     };
-    windowsInstallerFile;
+    switch (windowsInstallerStore) {
+      case (?s) {
+        ?{
+          file = Blob.fromArray([]);
+          fileName = s.fileName;
+          mimeType = s.mimeType;
+        };
+      };
+      case null { windowsInstallerFile };
+    };
   };
 
-  // Public Windows installer download - accessible to anyone who submitted the form
-  // This is intentionally public as per specification: "Live user download functionality"
   public query func downloadWindowsInstaller() : async InstallerDownloadResult {
-    switch (windowsInstallerFile) {
-      case null {
-        #err("Windows installer not available. Please contact support.");
+    switch (windowsInstallerStore) {
+      case (?s) {
+        if (s.chunks.size() == 1) {
+          #ok({
+            file = s.chunks[0];
+            fileName = s.fileName;
+            mimeType = s.mimeType;
+          });
+        } else {
+          #err(
+            "Windows installer is chunked (" # s.chunks.size().toText() #
+            " parts). Use getPublicWindowsInstallerMeta + downloadWindowsInstallerChunk."
+          );
+        };
       };
-      case (?installer) {
+      case null {
+        switch (windowsInstallerFile) {
+          case null {
+            #err("Windows installer not available. Please contact support.");
+          };
+          case (?installer) {
+            #ok({
+              file = installer.file;
+              fileName = installer.fileName;
+              mimeType = installer.mimeType;
+            });
+          };
+        };
+      };
+    };
+  };
+
+  public query func getPublicWindowsInstallerMeta() : async ?InstallerMeta {
+    switch (windowsInstallerStore) {
+      case (?s) {
+        ?{
+          fileName = s.fileName;
+          mimeType = s.mimeType;
+          totalSize = s.totalSize;
+          chunkCount = s.chunks.size();
+        };
+      };
+      case null {
+        switch (windowsInstallerFile) {
+          case null { null };
+          case (?f) {
+            ?{
+              fileName = f.fileName;
+              mimeType = f.mimeType;
+              totalSize = f.file.size();
+              chunkCount = 1;
+            };
+          };
+        };
+      };
+    };
+  };
+
+  public query func downloadWindowsInstallerChunk(chunkIndex : Nat) : async InstallerChunkResult {
+    switch (windowsInstallerStore) {
+      case (?s) {
+        if (chunkIndex >= s.chunks.size()) {
+          return #err("chunkIndex out of range");
+        };
         #ok({
-          file = installer.file;
-          fileName = installer.fileName;
-          mimeType = installer.mimeType;
+          chunk = s.chunks[chunkIndex];
+          chunkIndex;
+          chunkCount = s.chunks.size();
         });
+      };
+      case null {
+        switch (windowsInstallerFile) {
+          case null {
+            #err("Windows installer not available. Please contact support.");
+          };
+          case (?f) {
+            if (chunkIndex != 0) { return #err("chunkIndex out of range") };
+            #ok({
+              chunk = f.file;
+              chunkIndex = 0;
+              chunkCount = 1;
+            });
+          };
+        };
       };
     };
   };

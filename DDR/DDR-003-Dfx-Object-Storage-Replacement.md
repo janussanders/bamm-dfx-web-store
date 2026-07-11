@@ -29,21 +29,32 @@ Done in this repo (does **not** touch Caffeine production):
 3. **check-stable**: regenerated `scripts/check-stable/backend-02c10d9.most` (+ sibling copies) from the Blob-only `backend.most` after mixin removal. Empty dfx canisters do not need the old Caffeine mixin baseline.
 4. **Frontend**: local shim `src/frontend/src/lib/dfxExternalBlob.ts` (`fromBytes` / `getBytes` / `getDirectURL` / `directURL`); after `caffeine-bindgen`, `backend.ts` is patched to import the shim and use identity upload/download. Bindgen now emits plain `Uint8Array` for file fields (no Caffeine ExternalBlob candid type). UI hooks bridge ExternalBlob ↔ bytes. Package removed from `src/frontend/package.json` (may remain transitive via bindgen/core-infra).
 
-### Still open (full spike exit)
+## Chunked installers + persistence (2026-07-10)
 
-- Local deploy + Super Admin claim
-- Upload ≥1 MiB test blob; browser download
-- Document max installer size (IC message / query limits for single Blob)
+Desktop installers are ~110–140 MiB. IC ingress is **2 MiB** and query responses **3 MiB**, so single-shot `uploadMacInstaller(file)` always failed after the UI progress bar jumped to 100% (local `getBytes()` only).
+
+| Piece | Behavior |
+|-------|----------|
+| Storage | `macInstallerStore` / `windowsInstallerStore` — persistent `[Blob]` chunks under `--default-persistent-actors` (survive upgrades) |
+| Upload | `begin*Upload` → `upload*Chunk` (≤1.5 MiB) → `finalize*Upload` |
+| Download | `getPublic*Meta` + `download*Chunk`; frontend reassembles |
+| Legacy fields | `macInstallerFile` / `windowsInstallerFile` kept for upgrade compatibility (unused for new uploads) |
+| Secrets | `stripeConfig`, `resendConfig`, `privateKeyPem`, admin RBAC maps — already persistent actor vars |
+
+Frontend helper: `src/frontend/src/lib/chunkedInstaller.ts`.
+
+### Still open
+
+- Document cycle cost / memory for ~250 MiB of installers on the backend canister
+- Optional later: move binaries to asset canister (Option B) if heap/cycles become painful
 
 ## Spike exit criteria
 
-1. Backend builds under dfx **without** `caffeineai-object-storage` ✅ (compile spike)
-2. Local deploy; Super Admin claim works
-3. Upload ≥1 MiB test blob; browser download works
-4. Document max installer size
-
-If A/B/C all fail → pause storefront path and revisit hosting options (DDR-001 alternatives).
+1. Backend builds under dfx **without** `caffeineai-object-storage` ✅
+2. Local/IC deploy; Super Admin claim works ✅
+3. Upload ≥1 MiB (and production-size DMG/EXE via chunks); browser download works — **shipped chunked path; verify on live after deploy**
+4. Document max installer size — practical limit is canister memory/cycles; per-message chunk max **1.5 MiB**
 
 ## Consequence
 
-Installer upload UX may differ slightly from Caffeine; product behavior (sell licenses, activate entitlements) stays equivalent. Large installers may need chunking (Option A full) before production-size DMG/EXE uploads succeed.
+Installer upload UX shows real per-chunk progress (minutes for ~100 MiB). Product behavior (sell licenses, activate entitlements) stays equivalent. Artifacts (installers + Stripe/RESEND/PEM/admins) persist across Motoko upgrades when using `dfx deploy` upgrade (not reinstall).

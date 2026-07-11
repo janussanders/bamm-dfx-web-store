@@ -40,6 +40,23 @@ export interface EmailLog {
     deliveryStatus: string;
     email: string;
 }
+export type InstallerChunkResult = {
+    __kind__: "ok";
+    ok: {
+        chunkIndex: bigint;
+        chunk: Uint8Array;
+        chunkCount: bigint;
+    };
+} | {
+    __kind__: "err";
+    err: string;
+};
+export interface LicenseRequest {
+    features: Array<string>;
+    deliveryMethod: string;
+    expirationDate: bigint;
+    recipientEmail: string;
+}
 export interface AuditEntry {
     id: string;
     action: string;
@@ -47,12 +64,6 @@ export interface AuditEntry {
     target: string;
     timestamp: bigint;
     actorEmail: string;
-}
-export interface LicenseRequest {
-    features: Array<string>;
-    deliveryMethod: string;
-    expirationDate: bigint;
-    recipientEmail: string;
 }
 export type Result_1 = {
     __kind__: "ok";
@@ -80,13 +91,6 @@ export interface ResendConfiguration {
     apiKey: string;
     senderEmail: string;
 }
-export type EmailSendResult = {
-    __kind__: "ok";
-    ok: string;
-} | {
-    __kind__: "err";
-    err: string;
-};
 export type InstallerDownloadResult = {
     __kind__: "ok";
     ok: {
@@ -104,6 +108,13 @@ export interface EntitlementWorkflowStep {
     timestamp: bigint;
     stripeSessionId?: string;
 }
+export type EmailSendResult = {
+    __kind__: "ok";
+    ok: string;
+} | {
+    __kind__: "err";
+    err: string;
+};
 export interface TransformationInput {
     context: Uint8Array;
     response: http_request_result;
@@ -150,6 +161,12 @@ export interface StripeConfiguration {
     allowedCountries: Array<string>;
     secretKey: string;
 }
+export interface InstallerMeta {
+    mimeType: string;
+    fileName: string;
+    totalSize: bigint;
+    chunkCount: bigint;
+}
 export interface EmailAutomationSettings {
     emailSubject: string;
     emailBody: string;
@@ -181,17 +198,17 @@ export interface http_header {
     value: string;
     name: string;
 }
+export interface http_request_result {
+    status: bigint;
+    body: Uint8Array;
+    headers: Array<http_header>;
+}
 export interface EntitlementRegistryEntry {
     purchasedAtIso: string;
     linkedPurchases: Array<LinkedPremiumPurchaseView>;
     updatedAtIso: string;
     workflowSteps: Array<EntitlementWorkflowStep>;
     entitlement: EntitlementStatusView;
-}
-export interface http_request_result {
-    status: bigint;
-    body: Uint8Array;
-    headers: Array<http_header>;
 }
 export interface EntitlementStatusView {
     status: string;
@@ -308,7 +325,11 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
+    beginMacInstallerUpload(fileName: string, totalSize: bigint, totalChunks: bigint): Promise<Result>;
+    beginWindowsInstallerUpload(fileName: string, totalSize: bigint, totalChunks: bigint): Promise<Result>;
     bootstrapSuperAdmin(name: string, email: string): Promise<string>;
+    cancelMacInstallerUpload(): Promise<void>;
+    cancelWindowsInstallerUpload(): Promise<void>;
     checkAnyPendingInvite(): Promise<{
         role: string;
         email?: string;
@@ -338,9 +359,13 @@ export interface backendInterface {
     deleteUserSubmission(email: string): Promise<void>;
     disableFeature(featureId: string): Promise<void>;
     downloadMacInstaller(): Promise<InstallerDownloadResult>;
+    downloadMacInstallerChunk(chunkIndex: bigint): Promise<InstallerChunkResult>;
     downloadWindowsInstaller(): Promise<InstallerDownloadResult>;
+    downloadWindowsInstallerChunk(chunkIndex: bigint): Promise<InstallerChunkResult>;
     elevateAdminRole(adminId: string, newRole: AdminRole): Promise<Result>;
     enableFeature(featureId: string): Promise<void>;
+    finalizeMacInstallerUpload(): Promise<Result>;
+    finalizeWindowsInstallerUpload(): Promise<Result>;
     fulfillPaidLicense(sessionId: string): Promise<{
         __kind__: "ok";
         ok: string;
@@ -379,6 +404,7 @@ export interface backendInterface {
         __kind__: "err";
         err: string;
     }>;
+    getInstallerChunkMaxBytes(): Promise<bigint>;
     /**
      * / Public metadata only (DDR-029) — file names for version display without downloading blobs.
      */
@@ -400,10 +426,13 @@ export interface backendInterface {
         mimeType: string;
         fileName: string;
     } | null>;
+    getMacInstallerMeta(): Promise<InstallerMeta | null>;
     getMyAdminRole(): Promise<string | null>;
     getPremiumFeatures(): Promise<Array<LicenseFeature>>;
     getPremiumPurchases(): Promise<Array<PremiumPurchase>>;
     getProducts(): Promise<Array<Product>>;
+    getPublicMacInstallerMeta(): Promise<InstallerMeta | null>;
+    getPublicWindowsInstallerMeta(): Promise<InstallerMeta | null>;
     getResendConfiguration(): Promise<ResendConfiguration | null>;
     getStripeSessionStatus(sessionId: string): Promise<Result_1>;
     getSuperAdminClaimCode(): Promise<string>;
@@ -418,6 +447,7 @@ export interface backendInterface {
         mimeType: string;
         fileName: string;
     } | null>;
+    getWindowsInstallerMeta(): Promise<InstallerMeta | null>;
     incrementDownloadCount(email: string): Promise<void>;
     initializeDefaultLicenseBundles(): Promise<void>;
     initializeDefaultPremiumFeatures(): Promise<void>;
@@ -508,9 +538,14 @@ export interface backendInterface {
     }>;
     updateResendServiceName(serviceName: string): Promise<void>;
     uploadFeatureImage(featureId: string, image: Uint8Array): Promise<void>;
+    /**
+     * / Legacy single-shot upload — only for files ≤ chunk max. Prefer begin/chunk/finalize for DMG/EXE.
+     */
     uploadMacInstaller(file: Uint8Array, fileName: string): Promise<boolean>;
+    uploadMacInstallerChunk(chunkIndex: bigint, chunk: Uint8Array): Promise<Result>;
     uploadPrivateKeyFile(file: Uint8Array): Promise<void>;
     uploadPrivateKeyPem(pem: string): Promise<void>;
     uploadTrialLicenseFile(file: Uint8Array): Promise<void>;
     uploadWindowsInstaller(file: Uint8Array, fileName: string): Promise<boolean>;
+    uploadWindowsInstallerChunk(chunkIndex: bigint, chunk: Uint8Array): Promise<Result>;
 }

@@ -77,4 +77,5 @@ Until the secret exists and the identity is funded, run the workflow with `deplo
 | `dfx.json` | Added |
 | CI build + optional deploy | Added |
 | Live IC URL | **Live** — https://5xyyv-paaaa-aaaao-bbebq-cai.icp0.io (backend `5z2v5-…`) |
-| ≥1 MiB installer round-trip | Pending after Super Admin claim + installer upload |
+| Installer upload | Chunked persistent store (DDR-003) — redeploy required before large DMG/EXE work |
+| ≥1 MiB installer round-trip | Pending verify after chunked deploy |

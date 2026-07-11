@@ -1132,21 +1132,17 @@ export default function AdminPanel() {
       setIsMacUploading(true);
       setMacUploadProgress(0);
 
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-
-      const blob = ExternalBlob.fromBytes(uint8Array).withUploadProgress(
-        (percentage) => {
-          setMacUploadProgress(percentage);
-        },
-      );
-
-      await uploadMacInstaller.mutateAsync({ file: blob, fileName: file.name });
+      await uploadMacInstaller.mutateAsync({
+        file,
+        onProgress: (pct) => setMacUploadProgress(pct),
+      });
       toast.success("Mac installer uploaded successfully");
       setMacUploadProgress(0);
     } catch (error) {
       console.error("Mac installer upload error:", error);
-      toast.error("Failed to upload Mac installer");
+      const message =
+        error instanceof Error ? error.message : "Failed to upload Mac installer";
+      toast.error(message);
     } finally {
       setIsMacUploading(false);
       e.target.value = "";
@@ -1179,24 +1175,19 @@ export default function AdminPanel() {
       setIsWindowsUploading(true);
       setWindowsUploadProgress(0);
 
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-
-      const blob = ExternalBlob.fromBytes(uint8Array).withUploadProgress(
-        (percentage) => {
-          setWindowsUploadProgress(percentage);
-        },
-      );
-
       await uploadWindowsInstaller.mutateAsync({
-        file: blob,
-        fileName: file.name,
+        file,
+        onProgress: (pct) => setWindowsUploadProgress(pct),
       });
       toast.success("Windows installer uploaded successfully");
       setWindowsUploadProgress(0);
     } catch (error) {
       console.error("Windows installer upload error:", error);
-      toast.error("Failed to upload Windows installer");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to upload Windows installer";
+      toast.error(message);
     } finally {
       setIsWindowsUploading(false);
       e.target.value = "";

@@ -200,6 +200,7 @@ actor ({
       var root : Node__1000929467<Text, CustomerEntitlement__774222852>;
       var size : Nat__1040412405
     };
+  stable installerChunkMaxBytes : Nat;
   stable var licenseBundles :
     {
       var root : Node__1000929467<Text, LicenseBundle__824924899>;
@@ -218,6 +219,16 @@ actor ({
   stable licenseTermDays : Int;
   stable var macInstallerFile :
     ?{file : Blob; fileName : Text; mimeType : Text};
+  stable var macInstallerStore :
+    ?{chunks : [Blob]; fileName : Text; mimeType : Text; totalSize : Nat};
+  stable var macUploadActive : Bool;
+  stable var macUploadChunks :
+    {var root : Node__1000929467<Nat, Blob>; var size : Nat__1040412405};
+  stable var macUploadFileName : Text;
+  stable var macUploadMime : Text;
+  stable var macUploadReceived : Nat;
+  stable var macUploadTotalChunks : Nat;
+  stable var macUploadTotalSize : Nat;
   stable nsPerDay : Int;
   in premiumPurchases :
     Map__222667396<Text, PremiumPurchaseLegacy__789420810>;
@@ -263,7 +274,17 @@ actor ({
       var size : Nat__1040412405
     };
   stable var windowsInstallerFile :
-    ?{file : Blob; fileName : Text; mimeType : Text}
+    ?{file : Blob; fileName : Text; mimeType : Text};
+  stable var windowsInstallerStore :
+    ?{chunks : [Blob]; fileName : Text; mimeType : Text; totalSize : Nat};
+  stable var windowsUploadActive : Bool;
+  stable var windowsUploadChunks :
+    {var root : Node__1000929467<Nat, Blob>; var size : Nat__1040412405};
+  stable var windowsUploadFileName : Text;
+  stable var windowsUploadMime : Text;
+  stable var windowsUploadReceived : Nat;
+  stable var windowsUploadTotalChunks : Nat;
+  stable var windowsUploadTotalSize : Nat
 }, {
   stable accessControlState :
     {
@@ -303,6 +324,7 @@ actor ({
       var root : Node__1000929467<Text, CustomerEntitlement__774222852>;
       var size : Nat__1040412405
     };
+  stable installerChunkMaxBytes : Nat;
   stable var licenseBundles :
     {
       var root : Node__1000929467<Text, LicenseBundle__824924899>;
@@ -321,6 +343,16 @@ actor ({
   stable licenseTermDays : Int;
   stable var macInstallerFile :
     ?{file : Blob; fileName : Text; mimeType : Text};
+  stable var macInstallerStore :
+    ?{chunks : [Blob]; fileName : Text; mimeType : Text; totalSize : Nat};
+  stable var macUploadActive : Bool;
+  stable var macUploadChunks :
+    {var root : Node__1000929467<Nat, Blob>; var size : Nat__1040412405};
+  stable var macUploadFileName : Text;
+  stable var macUploadMime : Text;
+  stable var macUploadReceived : Nat;
+  stable var macUploadTotalChunks : Nat;
+  stable var macUploadTotalSize : Nat;
   stable nsPerDay : Int;
   stable var premiumPurchases :
     {
@@ -369,5 +401,15 @@ actor ({
       var size : Nat__1040412405
     };
   stable var windowsInstallerFile :
-    ?{file : Blob; fileName : Text; mimeType : Text}
+    ?{file : Blob; fileName : Text; mimeType : Text};
+  stable var windowsInstallerStore :
+    ?{chunks : [Blob]; fileName : Text; mimeType : Text; totalSize : Nat};
+  stable var windowsUploadActive : Bool;
+  stable var windowsUploadChunks :
+    {var root : Node__1000929467<Nat, Blob>; var size : Nat__1040412405};
+  stable var windowsUploadFileName : Text;
+  stable var windowsUploadMime : Text;
+  stable var windowsUploadReceived : Nat;
+  stable var windowsUploadTotalChunks : Nat;
+  stable var windowsUploadTotalSize : Nat
 });

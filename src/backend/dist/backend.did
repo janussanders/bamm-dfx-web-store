@@ -186,6 +186,13 @@ type LicenseBundle =
    savingsCents: nat;
    sortOrder: nat;
  };
+type InstallerMeta = 
+ record {
+   chunkCount: nat;
+   fileName: text;
+   mimeType: text;
+   totalSize: nat;
+ };
 type InstallerDownloadResult = 
  variant {
    err: text;
@@ -193,6 +200,15 @@ type InstallerDownloadResult =
          file: blob;
          fileName: text;
          mimeType: text;
+       };
+ };
+type InstallerChunkResult = 
+ variant {
+   err: text;
+   ok: record {
+         chunk: blob;
+         chunkCount: nat;
+         chunkIndex: nat;
        };
  };
 type EntitlementWorkflowStep = 
@@ -313,7 +329,13 @@ service : {
          skippedNoFeatures: nat;
        };
     });
+  beginMacInstallerUpload: (fileName: text, totalSize: nat, totalChunks:
+   nat) -> (Result);
+  beginWindowsInstallerUpload: (fileName: text, totalSize: nat, totalChunks:
+   nat) -> (Result);
   bootstrapSuperAdmin: (name: text, email: text) -> (text);
+  cancelMacInstallerUpload: () -> ();
+  cancelWindowsInstallerUpload: () -> ();
   checkAnyPendingInvite: () ->
    (opt record {
           email: opt text;
@@ -345,9 +367,15 @@ service : {
   deleteUserSubmission: (email: text) -> ();
   disableFeature: (featureId: text) -> ();
   downloadMacInstaller: () -> (InstallerDownloadResult) query;
+  downloadMacInstallerChunk: (chunkIndex: nat) ->
+   (InstallerChunkResult) query;
   downloadWindowsInstaller: () -> (InstallerDownloadResult) query;
+  downloadWindowsInstallerChunk: (chunkIndex: nat) ->
+   (InstallerChunkResult) query;
   elevateAdminRole: (adminId: text, newRole: AdminRole) -> (Result);
   enableFeature: (featureId: text) -> ();
+  finalizeMacInstallerUpload: () -> (Result);
+  finalizeWindowsInstallerUpload: () -> (Result);
   fulfillPaidLicense: (sessionId: text) -> (variant {
                                               err: text;
                                               ok: text;
@@ -382,6 +410,7 @@ service : {
       err: text;
       ok: EntitlementStatusView;
     }) query;
+  getInstallerChunkMaxBytes: () -> (nat) query;
   /// Public metadata only (DDR-029) — file names for version display without downloading blobs.
   getInstallerFileNames: () ->
    (record {
@@ -404,10 +433,13 @@ service : {
           fileName: text;
           mimeType: text;
         }) query;
+  getMacInstallerMeta: () -> (opt InstallerMeta) query;
   getMyAdminRole: () -> (opt text) query;
   getPremiumFeatures: () -> (vec LicenseFeature) query;
   getPremiumPurchases: () -> (vec PremiumPurchase) query;
   getProducts: () -> (vec Product) query;
+  getPublicMacInstallerMeta: () -> (opt InstallerMeta) query;
+  getPublicWindowsInstallerMeta: () -> (opt InstallerMeta) query;
   getResendConfiguration: () -> (opt ResendConfiguration) query;
   getStripeSessionStatus: (sessionId: text) -> (Result_1);
   getSuperAdminClaimCode: () -> (text) query;
@@ -423,6 +455,7 @@ service : {
           fileName: text;
           mimeType: text;
         }) query;
+  getWindowsInstallerMeta: () -> (opt InstallerMeta) query;
   incrementDownloadCount: (email: text) -> ();
   initializeDefaultLicenseBundles: () -> ();
   initializeDefaultPremiumFeatures: () -> ();
@@ -499,9 +532,12 @@ service : {
     });
   updateResendServiceName: (serviceName: text) -> ();
   uploadFeatureImage: (featureId: text, image: blob) -> ();
+  /// Legacy single-shot upload — only for files ≤ chunk max. Prefer begin/chunk/finalize for DMG/EXE.
   uploadMacInstaller: (file: blob, fileName: text) -> (bool);
+  uploadMacInstallerChunk: (chunkIndex: nat, chunk: blob) -> (Result);
   uploadPrivateKeyFile: (file: blob) -> ();
   uploadPrivateKeyPem: (pem: text) -> ();
   uploadTrialLicenseFile: (file: blob) -> ();
   uploadWindowsInstaller: (file: blob, fileName: text) -> (bool);
+  uploadWindowsInstallerChunk: (chunkIndex: nat, chunk: blob) -> (Result);
 }

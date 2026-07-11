@@ -2,7 +2,6 @@ import type {
   EmailAutomationSettings,
   EmailLog,
   EmailSendResult,
-  InstallerDownloadResult,
   LicenseRecord,
   LicenseRequest,
   PremiumPurchase,
@@ -573,12 +572,12 @@ export function useGetMacInstaller() {
     queryKey: ["macInstaller"],
     queryFn: async () => {
       if (!actor) return null;
-      const result = await actor.getMacInstallerFile();
-      if (!result) return null;
+      const meta = await actor.getMacInstallerMeta();
+      if (!meta) return null;
       return {
-        file: ExternalBlob.fromBytes(result.file),
-        fileName: result.fileName,
-        mimeType: result.mimeType,
+        file: ExternalBlob.fromBytes(new Uint8Array()),
+        fileName: meta.fileName,
+        mimeType: meta.mimeType,
       };
     },
     enabled: !!actor && !isFetching,
@@ -592,10 +591,14 @@ export function useUploadMacInstaller() {
   return useMutation({
     mutationFn: async ({
       file,
-      fileName,
-    }: { file: ExternalBlob; fileName: string }) => {
+      onProgress,
+    }: {
+      file: File;
+      onProgress?: (percent: number) => void;
+    }) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.uploadMacInstaller(await file.getBytes(), fileName);
+      const { uploadInstallerChunked } = await import("@/lib/chunkedInstaller");
+      await uploadInstallerChunked(actor, "mac", file, onProgress);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["macInstaller"] });
@@ -615,12 +618,12 @@ export function useGetWindowsInstaller() {
     queryKey: ["windowsInstaller"],
     queryFn: async () => {
       if (!actor) return null;
-      const result = await actor.getWindowsInstallerFile();
-      if (!result) return null;
+      const meta = await actor.getWindowsInstallerMeta();
+      if (!meta) return null;
       return {
-        file: ExternalBlob.fromBytes(result.file),
-        fileName: result.fileName,
-        mimeType: result.mimeType,
+        file: ExternalBlob.fromBytes(new Uint8Array()),
+        fileName: meta.fileName,
+        mimeType: meta.mimeType,
       };
     },
     enabled: !!actor && !isFetching,
@@ -634,10 +637,14 @@ export function useUploadWindowsInstaller() {
   return useMutation({
     mutationFn: async ({
       file,
-      fileName,
-    }: { file: ExternalBlob; fileName: string }) => {
+      onProgress,
+    }: {
+      file: File;
+      onProgress?: (percent: number) => void;
+    }) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.uploadWindowsInstaller(await file.getBytes(), fileName);
+      const { uploadInstallerChunked } = await import("@/lib/chunkedInstaller");
+      await uploadInstallerChunked(actor, "windows", file, onProgress);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["windowsInstaller"] });
@@ -651,9 +658,10 @@ export function useDownloadMacInstaller() {
   const { actor } = useActor();
 
   return useMutation({
-    mutationFn: async (): Promise<InstallerDownloadResult> => {
+    mutationFn: async (onProgress?: (percent: number) => void) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.downloadMacInstaller();
+      const { downloadInstallerChunked } = await import("@/lib/chunkedInstaller");
+      return downloadInstallerChunked(actor, "mac", onProgress);
     },
   });
 }
@@ -662,9 +670,10 @@ export function useDownloadWindowsInstaller() {
   const { actor } = useActor();
 
   return useMutation({
-    mutationFn: async (): Promise<InstallerDownloadResult> => {
+    mutationFn: async (onProgress?: (percent: number) => void) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.downloadWindowsInstaller();
+      const { downloadInstallerChunked } = await import("@/lib/chunkedInstaller");
+      return downloadInstallerChunked(actor, "windows", onProgress);
     },
   });
 }

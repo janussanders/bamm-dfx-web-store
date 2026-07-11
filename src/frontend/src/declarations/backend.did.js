@@ -72,6 +72,14 @@ export const InstallerDownloadResult = IDL.Variant({
   }),
   'err' : IDL.Text,
 });
+export const InstallerChunkResult = IDL.Variant({
+  'ok' : IDL.Record({
+    'chunkIndex' : IDL.Nat,
+    'chunk' : IDL.Vec(IDL.Nat8),
+    'chunkCount' : IDL.Nat,
+  }),
+  'err' : IDL.Text,
+});
 export const AdminRole = IDL.Variant({
   'licenseGenerator' : IDL.Null,
   'superAdmin' : IDL.Null,
@@ -149,6 +157,12 @@ export const LicenseRecord = IDL.Record({
   'licenseJson' : IDL.Text,
   'generatedTimestamp' : IDL.Int,
   'recipientEmail' : IDL.Text,
+});
+export const InstallerMeta = IDL.Record({
+  'mimeType' : IDL.Text,
+  'fileName' : IDL.Text,
+  'totalSize' : IDL.Nat,
+  'chunkCount' : IDL.Nat,
 });
 export const PremiumPurchase = IDL.Record({
   'customerName' : IDL.Text,
@@ -276,7 +290,19 @@ export const idlService = IDL.Service({
       ],
       [],
     ),
+  'beginMacInstallerUpload' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Nat],
+      [Result],
+      [],
+    ),
+  'beginWindowsInstallerUpload' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Nat],
+      [Result],
+      [],
+    ),
   'bootstrapSuperAdmin' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
+  'cancelMacInstallerUpload' : IDL.Func([], [], []),
+  'cancelWindowsInstallerUpload' : IDL.Func([], [], []),
   'checkAnyPendingInvite' : IDL.Func(
       [],
       [
@@ -319,13 +345,25 @@ export const idlService = IDL.Service({
   'deleteUserSubmission' : IDL.Func([IDL.Text], [], []),
   'disableFeature' : IDL.Func([IDL.Text], [], []),
   'downloadMacInstaller' : IDL.Func([], [InstallerDownloadResult], ['query']),
+  'downloadMacInstallerChunk' : IDL.Func(
+      [IDL.Nat],
+      [InstallerChunkResult],
+      ['query'],
+    ),
   'downloadWindowsInstaller' : IDL.Func(
       [],
       [InstallerDownloadResult],
       ['query'],
     ),
+  'downloadWindowsInstallerChunk' : IDL.Func(
+      [IDL.Nat],
+      [InstallerChunkResult],
+      ['query'],
+    ),
   'elevateAdminRole' : IDL.Func([IDL.Text, AdminRole], [Result], []),
   'enableFeature' : IDL.Func([IDL.Text], [], []),
+  'finalizeMacInstallerUpload' : IDL.Func([], [Result], []),
+  'finalizeWindowsInstallerUpload' : IDL.Func([], [Result], []),
   'fulfillPaidLicense' : IDL.Func(
       [IDL.Text],
       [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
@@ -376,6 +414,7 @@ export const idlService = IDL.Service({
       [IDL.Variant({ 'ok' : EntitlementStatusView, 'err' : IDL.Text })],
       ['query'],
     ),
+  'getInstallerChunkMaxBytes' : IDL.Func([], [IDL.Nat], ['query']),
   'getInstallerFileNames' : IDL.Func(
       [],
       [
@@ -414,10 +453,21 @@ export const idlService = IDL.Service({
       ],
       ['query'],
     ),
+  'getMacInstallerMeta' : IDL.Func([], [IDL.Opt(InstallerMeta)], ['query']),
   'getMyAdminRole' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'getPremiumFeatures' : IDL.Func([], [IDL.Vec(LicenseFeature)], ['query']),
   'getPremiumPurchases' : IDL.Func([], [IDL.Vec(PremiumPurchase)], ['query']),
   'getProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+  'getPublicMacInstallerMeta' : IDL.Func(
+      [],
+      [IDL.Opt(InstallerMeta)],
+      ['query'],
+    ),
+  'getPublicWindowsInstallerMeta' : IDL.Func(
+      [],
+      [IDL.Opt(InstallerMeta)],
+      ['query'],
+    ),
   'getResendConfiguration' : IDL.Func(
       [],
       [IDL.Opt(ResendConfiguration)],
@@ -448,6 +498,7 @@ export const idlService = IDL.Service({
       ],
       ['query'],
     ),
+  'getWindowsInstallerMeta' : IDL.Func([], [IDL.Opt(InstallerMeta)], ['query']),
   'incrementDownloadCount' : IDL.Func([IDL.Text], [], []),
   'initializeDefaultLicenseBundles' : IDL.Func([], [], []),
   'initializeDefaultPremiumFeatures' : IDL.Func([], [], []),
@@ -554,12 +605,22 @@ export const idlService = IDL.Service({
       [IDL.Bool],
       [],
     ),
+  'uploadMacInstallerChunk' : IDL.Func(
+      [IDL.Nat, IDL.Vec(IDL.Nat8)],
+      [Result],
+      [],
+    ),
   'uploadPrivateKeyFile' : IDL.Func([IDL.Vec(IDL.Nat8)], [], []),
   'uploadPrivateKeyPem' : IDL.Func([IDL.Text], [], []),
   'uploadTrialLicenseFile' : IDL.Func([IDL.Vec(IDL.Nat8)], [], []),
   'uploadWindowsInstaller' : IDL.Func(
       [IDL.Vec(IDL.Nat8), IDL.Text],
       [IDL.Bool],
+      [],
+    ),
+  'uploadWindowsInstallerChunk' : IDL.Func(
+      [IDL.Nat, IDL.Vec(IDL.Nat8)],
+      [Result],
       [],
     ),
 });
@@ -628,6 +689,14 @@ export const idlFactory = ({ IDL }) => {
       'file' : IDL.Vec(IDL.Nat8),
       'mimeType' : IDL.Text,
       'fileName' : IDL.Text,
+    }),
+    'err' : IDL.Text,
+  });
+  const InstallerChunkResult = IDL.Variant({
+    'ok' : IDL.Record({
+      'chunkIndex' : IDL.Nat,
+      'chunk' : IDL.Vec(IDL.Nat8),
+      'chunkCount' : IDL.Nat,
     }),
     'err' : IDL.Text,
   });
@@ -705,6 +774,12 @@ export const idlFactory = ({ IDL }) => {
     'licenseJson' : IDL.Text,
     'generatedTimestamp' : IDL.Int,
     'recipientEmail' : IDL.Text,
+  });
+  const InstallerMeta = IDL.Record({
+    'mimeType' : IDL.Text,
+    'fileName' : IDL.Text,
+    'totalSize' : IDL.Nat,
+    'chunkCount' : IDL.Nat,
   });
   const PremiumPurchase = IDL.Record({
     'customerName' : IDL.Text,
@@ -826,7 +901,19 @@ export const idlFactory = ({ IDL }) => {
         ],
         [],
       ),
+    'beginMacInstallerUpload' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Nat],
+        [Result],
+        [],
+      ),
+    'beginWindowsInstallerUpload' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Nat],
+        [Result],
+        [],
+      ),
     'bootstrapSuperAdmin' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
+    'cancelMacInstallerUpload' : IDL.Func([], [], []),
+    'cancelWindowsInstallerUpload' : IDL.Func([], [], []),
     'checkAnyPendingInvite' : IDL.Func(
         [],
         [
@@ -869,13 +956,25 @@ export const idlFactory = ({ IDL }) => {
     'deleteUserSubmission' : IDL.Func([IDL.Text], [], []),
     'disableFeature' : IDL.Func([IDL.Text], [], []),
     'downloadMacInstaller' : IDL.Func([], [InstallerDownloadResult], ['query']),
+    'downloadMacInstallerChunk' : IDL.Func(
+        [IDL.Nat],
+        [InstallerChunkResult],
+        ['query'],
+      ),
     'downloadWindowsInstaller' : IDL.Func(
         [],
         [InstallerDownloadResult],
         ['query'],
       ),
+    'downloadWindowsInstallerChunk' : IDL.Func(
+        [IDL.Nat],
+        [InstallerChunkResult],
+        ['query'],
+      ),
     'elevateAdminRole' : IDL.Func([IDL.Text, AdminRole], [Result], []),
     'enableFeature' : IDL.Func([IDL.Text], [], []),
+    'finalizeMacInstallerUpload' : IDL.Func([], [Result], []),
+    'finalizeWindowsInstallerUpload' : IDL.Func([], [Result], []),
     'fulfillPaidLicense' : IDL.Func(
         [IDL.Text],
         [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
@@ -937,6 +1036,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'ok' : EntitlementStatusView, 'err' : IDL.Text })],
         ['query'],
       ),
+    'getInstallerChunkMaxBytes' : IDL.Func([], [IDL.Nat], ['query']),
     'getInstallerFileNames' : IDL.Func(
         [],
         [
@@ -975,10 +1075,21 @@ export const idlFactory = ({ IDL }) => {
         ],
         ['query'],
       ),
+    'getMacInstallerMeta' : IDL.Func([], [IDL.Opt(InstallerMeta)], ['query']),
     'getMyAdminRole' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'getPremiumFeatures' : IDL.Func([], [IDL.Vec(LicenseFeature)], ['query']),
     'getPremiumPurchases' : IDL.Func([], [IDL.Vec(PremiumPurchase)], ['query']),
     'getProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+    'getPublicMacInstallerMeta' : IDL.Func(
+        [],
+        [IDL.Opt(InstallerMeta)],
+        ['query'],
+      ),
+    'getPublicWindowsInstallerMeta' : IDL.Func(
+        [],
+        [IDL.Opt(InstallerMeta)],
+        ['query'],
+      ),
     'getResendConfiguration' : IDL.Func(
         [],
         [IDL.Opt(ResendConfiguration)],
@@ -1015,6 +1126,11 @@ export const idlFactory = ({ IDL }) => {
             })
           ),
         ],
+        ['query'],
+      ),
+    'getWindowsInstallerMeta' : IDL.Func(
+        [],
+        [IDL.Opt(InstallerMeta)],
         ['query'],
       ),
     'incrementDownloadCount' : IDL.Func([IDL.Text], [], []),
@@ -1127,12 +1243,22 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Bool],
         [],
       ),
+    'uploadMacInstallerChunk' : IDL.Func(
+        [IDL.Nat, IDL.Vec(IDL.Nat8)],
+        [Result],
+        [],
+      ),
     'uploadPrivateKeyFile' : IDL.Func([IDL.Vec(IDL.Nat8)], [], []),
     'uploadPrivateKeyPem' : IDL.Func([IDL.Text], [], []),
     'uploadTrialLicenseFile' : IDL.Func([IDL.Vec(IDL.Nat8)], [], []),
     'uploadWindowsInstaller' : IDL.Func(
         [IDL.Vec(IDL.Nat8), IDL.Text],
         [IDL.Bool],
+        [],
+      ),
+    'uploadWindowsInstallerChunk' : IDL.Func(
+        [IDL.Nat, IDL.Vec(IDL.Nat8)],
+        [Result],
         [],
       ),
   });

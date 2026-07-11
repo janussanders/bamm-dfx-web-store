@@ -115,38 +115,36 @@ export default function DownloadSuccess() {
         }
       }
 
-      const result =
+      const downloaded =
         platform === "mac"
-          ? await downloadMac.mutateAsync()
-          : await downloadWindows.mutateAsync();
+          ? await downloadMac.mutateAsync(undefined)
+          : await downloadWindows.mutateAsync(undefined);
 
-      if (result.__kind__ === "ok") {
-        const bytes = result.ok.file;
-        const blob = new Blob([Uint8Array.from(bytes)], {
-          type: result.ok.mimeType,
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = result.ok.fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        const installerInfo = parseDesktopInstallerFileName(result.ok.fileName);
-        const versionLabel = formatInstallerLabel(
-          installerInfo,
-          result.ok.fileName,
-        );
-        toast.success(
-          `${platform === "mac" ? "Mac" : "Windows"} ${versionLabel} download started`,
-        );
-      } else {
-        toast.error(result.err || "Download failed");
-      }
+      const bytes = Uint8Array.from(downloaded.bytes);
+      const blob = new Blob([bytes], {
+        type: downloaded.mimeType,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = downloaded.fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const installerInfo = parseDesktopInstallerFileName(downloaded.fileName);
+      const versionLabel = formatInstallerLabel(
+        installerInfo,
+        downloaded.fileName,
+      );
+      toast.success(
+        `${platform === "mac" ? "Mac" : "Windows"} ${versionLabel} download started`,
+      );
     } catch (error) {
       console.error("Download error:", error);
-      toast.error("Failed to download installer");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to download installer",
+      );
     } finally {
       setDownloadingPlatform(null);
     }

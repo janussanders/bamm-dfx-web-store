@@ -79,10 +79,24 @@ export interface EntitlementWorkflowStep {
   'timestamp' : bigint,
   'stripeSessionId' : [] | [string],
 }
+export type InstallerChunkResult = {
+    'ok' : {
+      'chunkIndex' : bigint,
+      'chunk' : Uint8Array,
+      'chunkCount' : bigint,
+    }
+  } |
+  { 'err' : string };
 export type InstallerDownloadResult = {
     'ok' : { 'file' : Uint8Array, 'mimeType' : string, 'fileName' : string }
   } |
   { 'err' : string };
+export interface InstallerMeta {
+  'mimeType' : string,
+  'fileName' : string,
+  'totalSize' : bigint,
+  'chunkCount' : bigint,
+}
 export interface LicenseBundle {
   'featureIds' : Array<string>,
   'priceInCentsAnnual' : bigint,
@@ -268,7 +282,11 @@ export interface _SERVICE {
       } |
       { 'err' : string }
   >,
+  'beginMacInstallerUpload' : ActorMethod<[string, bigint, bigint], Result>,
+  'beginWindowsInstallerUpload' : ActorMethod<[string, bigint, bigint], Result>,
   'bootstrapSuperAdmin' : ActorMethod<[string, string], string>,
+  'cancelMacInstallerUpload' : ActorMethod<[], undefined>,
+  'cancelWindowsInstallerUpload' : ActorMethod<[], undefined>,
   'checkAnyPendingInvite' : ActorMethod<
     [],
     [] | [{ 'role' : string, 'email' : [] | [string], 'hasUnlinked' : boolean }]
@@ -300,9 +318,13 @@ export interface _SERVICE {
   'deleteUserSubmission' : ActorMethod<[string], undefined>,
   'disableFeature' : ActorMethod<[string], undefined>,
   'downloadMacInstaller' : ActorMethod<[], InstallerDownloadResult>,
+  'downloadMacInstallerChunk' : ActorMethod<[bigint], InstallerChunkResult>,
   'downloadWindowsInstaller' : ActorMethod<[], InstallerDownloadResult>,
+  'downloadWindowsInstallerChunk' : ActorMethod<[bigint], InstallerChunkResult>,
   'elevateAdminRole' : ActorMethod<[string, AdminRole], Result>,
   'enableFeature' : ActorMethod<[string], undefined>,
+  'finalizeMacInstallerUpload' : ActorMethod<[], Result>,
+  'finalizeWindowsInstallerUpload' : ActorMethod<[], Result>,
   'fulfillPaidLicense' : ActorMethod<
     [string],
     { 'ok' : string } |
@@ -341,6 +363,7 @@ export interface _SERVICE {
     { 'ok' : EntitlementStatusView } |
       { 'err' : string }
   >,
+  'getInstallerChunkMaxBytes' : ActorMethod<[], bigint>,
   /**
    * / Public metadata only (DDR-029) — file names for version display without downloading blobs.
    */
@@ -364,10 +387,13 @@ export interface _SERVICE {
     [],
     [] | [{ 'file' : Uint8Array, 'mimeType' : string, 'fileName' : string }]
   >,
+  'getMacInstallerMeta' : ActorMethod<[], [] | [InstallerMeta]>,
   'getMyAdminRole' : ActorMethod<[], [] | [string]>,
   'getPremiumFeatures' : ActorMethod<[], Array<LicenseFeature>>,
   'getPremiumPurchases' : ActorMethod<[], Array<PremiumPurchase>>,
   'getProducts' : ActorMethod<[], Array<Product>>,
+  'getPublicMacInstallerMeta' : ActorMethod<[], [] | [InstallerMeta]>,
+  'getPublicWindowsInstallerMeta' : ActorMethod<[], [] | [InstallerMeta]>,
   'getResendConfiguration' : ActorMethod<[], [] | [ResendConfiguration]>,
   'getStripeSessionStatus' : ActorMethod<[string], Result_1>,
   'getSuperAdminClaimCode' : ActorMethod<[], string>,
@@ -381,6 +407,7 @@ export interface _SERVICE {
     [],
     [] | [{ 'file' : Uint8Array, 'mimeType' : string, 'fileName' : string }]
   >,
+  'getWindowsInstallerMeta' : ActorMethod<[], [] | [InstallerMeta]>,
   'incrementDownloadCount' : ActorMethod<[string], undefined>,
   'initializeDefaultLicenseBundles' : ActorMethod<[], undefined>,
   'initializeDefaultPremiumFeatures' : ActorMethod<[], undefined>,
@@ -468,11 +495,16 @@ export interface _SERVICE {
   >,
   'updateResendServiceName' : ActorMethod<[string], undefined>,
   'uploadFeatureImage' : ActorMethod<[string, Uint8Array], undefined>,
+  /**
+   * / Legacy single-shot upload — only for files ≤ chunk max. Prefer begin/chunk/finalize for DMG/EXE.
+   */
   'uploadMacInstaller' : ActorMethod<[Uint8Array, string], boolean>,
+  'uploadMacInstallerChunk' : ActorMethod<[bigint, Uint8Array], Result>,
   'uploadPrivateKeyFile' : ActorMethod<[Uint8Array], undefined>,
   'uploadPrivateKeyPem' : ActorMethod<[string], undefined>,
   'uploadTrialLicenseFile' : ActorMethod<[Uint8Array], undefined>,
   'uploadWindowsInstaller' : ActorMethod<[Uint8Array, string], boolean>,
+  'uploadWindowsInstallerChunk' : ActorMethod<[bigint, Uint8Array], Result>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];
