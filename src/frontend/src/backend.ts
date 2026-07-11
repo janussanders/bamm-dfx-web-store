@@ -53,7 +53,6 @@ function record_opt_to_undefined<T>(arg: T | null): T | undefined {
 }
 import { ExternalBlob, identityDownloadFile, identityUploadFile } from "./lib/dfxExternalBlob";
 export { ExternalBlob };
-// DDR-003: do not re-export @caffeineai/object-storage
 export interface UserProfile {
     name: string;
     email: string;

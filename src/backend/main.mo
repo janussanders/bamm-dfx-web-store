@@ -24,6 +24,9 @@ import Blob "mo:core/Blob";
 import LicenseSigner "LicenseSigner";
 import EntitlementMigration "EntitlementMigration";
 
+// DDR-003: max bytes per installer ingress/query chunk (module-level — must not alter actor field layout).
+let installerChunkMaxBytes : Nat = 1_500_000;
+
 
 
 
@@ -319,9 +322,6 @@ actor BAMM {
     #ok : Text;
     #err : Text;
   };
-
-  // Max bytes per ingress/query chunk (under IC ~2–3 MiB message limits, with candid headroom).
-  let installerChunkMaxBytes : Nat = 1_500_000;
 
   // Data storage
   var userSubmissions = Map.empty<Text, UserSubmission>();
