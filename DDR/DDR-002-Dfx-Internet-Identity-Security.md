@@ -12,9 +12,16 @@
 
 1. Open the dfx frontend URL  
 2. Sign in with Internet Identity (create or use existing II)  
-3. Claim **Super Admin** with the one-time claim code  
-4. Invite other admins as needed  
-5. Upload Stripe key, RESEND key, license PEM, installers  
+3. Open **`/admin-claim`** (not `/admin` — that redirects until you are an admin)  
+4. Enter the one-time claim code from:
+
+   ```bash
+   dfx canister call backend getSuperAdminClaimCode --network ic --identity anonymous --query
+   ```
+
+   (Allowed only while **no** active admins exist. Caffeine’s container “system admin” does **not** exist on dfx.)  
+5. Invite other admins as needed  
+6. Upload Stripe key, RESEND key, license PEM, installers  
 
 ## Security model (same as Caffeine app layer)
 

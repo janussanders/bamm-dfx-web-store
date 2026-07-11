@@ -49,7 +49,17 @@ Details + **how to fund cycles**: [dfx-ci-identity.md](dfx-ci-identity.md).
 Agentic URL: https://<frontend-canister-id>.icp0.io
 ```
 
-4. Open that URL → Internet Identity → claim Super Admin → configure Stripe / RESEND / PEM / installers (DDR-002).
+4. Open that URL → Internet Identity → **claim Super Admin** (there is no Caffeine “container system admin” on dfx):
+
+   - Go to `https://<frontend>.icp0.io/admin-claim` (must be signed in with II)
+   - One-time claim code (readable while no admins exist yet):
+
+   ```bash
+   dfx canister call backend getSuperAdminClaimCode --network ic --identity anonymous --query
+   ```
+
+   - Enter name, email, and the `BAMM…` code → you become Super Admin → `/admin` works
+   - Then configure Stripe / RESEND / PEM / installers; invite other admins from Admin
 
 Until the secret exists and the identity is funded, run the workflow with `deploy=false` to verify **build-only** CI.
 
@@ -66,5 +76,5 @@ Until the secret exists and the identity is funded, run the workflow with `deplo
 | DDR-003 Blob spike / mops build | Done |
 | `dfx.json` | Added |
 | CI build + optional deploy | Added |
-| Live IC URL | Backend canister `5z2v5-…` created; frontend recreated after next fund; **blocked on cycles** (~0.18 TC more to install backend wasm) |
-| ≥1 MiB installer round-trip | Pending after first green deploy |
+| Live IC URL | **Live** — https://5xyyv-paaaa-aaaao-bbebq-cai.icp0.io (backend `5z2v5-…`) |
+| ≥1 MiB installer round-trip | Pending after Super Admin claim + installer upload |
