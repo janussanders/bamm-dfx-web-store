@@ -24,9 +24,6 @@ import Blob "mo:core/Blob";
 import LicenseSigner "LicenseSigner";
 import EntitlementMigration "EntitlementMigration";
 
-// DDR-003: max bytes per installer ingress/query chunk (module-level — must not alter actor field layout).
-let installerChunkMaxBytes : Nat = 1_500_000;
-
 
 
 
@@ -407,7 +404,10 @@ actor BAMM {
     mimeType : Text;
   } = null;
 
-  // DDR-003: persistent chunked installers (--default-persistent-actors → survive canister upgrades).
+  // ── DDR-003 chunked installers (appended for EOP upgrade compatibility) ──
+  // Max bytes per ingress/query chunk (under IC ~2–3 MiB message limits).
+  let installerChunkMaxBytes : Nat = 1_500_000;
+
   var macInstallerStore : ?{
     fileName : Text;
     mimeType : Text;
@@ -422,7 +422,7 @@ actor BAMM {
     chunks : [Blob];
   } = null;
 
-  // In-progress chunked upload sessions (also persistent so a retry can resume after a failed chunk).
+  // In-progress chunked upload sessions (persistent so a retry can resume after a failed chunk).
   var macUploadActive : Bool = false;
   var macUploadFileName : Text = "";
   var macUploadMime : Text = "";
