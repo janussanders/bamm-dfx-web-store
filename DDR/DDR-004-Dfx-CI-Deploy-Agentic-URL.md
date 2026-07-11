@@ -1,9 +1,10 @@
 # DDR-004: GitHub Actions deploy & agentic test URL
 
 **Date:** 2026-07-10  
-**Status:** Implemented (build CI + optional deploy) — live URL pending secrets  
+**Status:** Implemented (live agentic URL)  
 **Parent:** [DDR-001](DDR-001-BAMM-Dfx-Web-Store-Parallel-Path.md)  
-**Runbook:** [docs/dfx-deploy.md](../docs/dfx-deploy.md)
+**Runbook:** [docs/dfx-deploy.md](../docs/dfx-deploy.md)  
+**Pitfalls:** [DDR-007](DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md)
 
 ## Goal
 
@@ -57,4 +58,6 @@ Never put Stripe/RESEND/license PEM in Actions — Admin UI after bootstrap (DDR
 2. II login → Super Admin claim  
 3. Configure Stripe (test), RESEND, PEM, installers  
 4. Smoke: trial email, test checkout, Admin entitlements  
-5. Commit generated `canister_ids.json` when ready to pin IDs (done for first IC create: backend `5z2v5-…`, frontend `5qz6b-…`)
+5. Commit generated `canister_ids.json` when ready to pin IDs (backend `5z2v5-…`, frontend `5xyyv-…`)  
+6. Installers: use chunked upload only ([DDR-005](DDR-005-Dfx-Chunked-Installer-Upload.md)); expect multi-minute transfers  
+7. Backend state changes: append actor fields only ([DDR-006](DDR-006-Dfx-EOP-Actor-Field-Append-Order.md))

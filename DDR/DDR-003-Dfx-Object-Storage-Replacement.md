@@ -1,8 +1,9 @@
 # DDR-003: Object storage replacement (dfx blocker)
 
 **Date:** 2026-07-10  
-**Status:** Implemented (spike)  
-**Parent:** [DDR-001](DDR-001-BAMM-Dfx-Web-Store-Parallel-Path.md)
+**Status:** Implemented  
+**Parent:** [DDR-001](DDR-001-BAMM-Dfx-Web-Store-Parallel-Path.md)  
+**Follow-ons:** [DDR-005](DDR-005-Dfx-Chunked-Installer-Upload.md) (chunked upload lock), [DDR-006](DDR-006-Dfx-EOP-Actor-Field-Append-Order.md) (where to append store fields)
 
 ## Problem
 

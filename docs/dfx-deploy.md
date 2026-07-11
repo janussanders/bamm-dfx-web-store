@@ -1,6 +1,14 @@
 # Dfx deploy & agentic URL
 
-**Related:** [DDR-003](../DDR/DDR-003-Dfx-Object-Storage-Replacement.md), [DDR-004](../DDR/DDR-004-Dfx-CI-Deploy-Agentic-URL.md)
+**Related:** [DDR-003](../DDR/DDR-003-Dfx-Object-Storage-Replacement.md), [DDR-004](../DDR/DDR-004-Dfx-CI-Deploy-Agentic-URL.md), [DDR-005](../DDR/DDR-005-Dfx-Chunked-Installer-Upload.md), [DDR-006](../DDR/DDR-006-Dfx-EOP-Actor-Field-Append-Order.md), [DDR-007](../DDR/DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md)
+
+## Failure map
+
+| Symptom | DDR |
+|---------|-----|
+| Installer upload bar → 100%, nothing stored | [DDR-005](../DDR/DDR-005-Dfx-Chunked-Installer-Upload.md) |
+| `Memory-incompatible program upgrade` (IC0503) on backend | [DDR-006](../DDR/DDR-006-Dfx-EOP-Actor-Field-Append-Order.md) |
+| Keyring hang, cycles, pnpm/vite deploy, no admin after II | [DDR-007](../DDR/DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md) |
 
 ## validate-snapshot — is it necessary?
 
@@ -73,9 +81,10 @@ Until the secret exists and the identity is funded, run the workflow with `deplo
 
 | Item | Status |
 |------|--------|
-| DDR-003 Blob spike / mops build | Done |
-| `dfx.json` | Added |
-| CI build + optional deploy | Added |
-| Live IC URL | **Live** — https://5xyyv-paaaa-aaaao-bbebq-cai.icp0.io (backend `5z2v5-…`) |
-| Installer upload | Chunked persistent store (DDR-003) — redeploy required before large DMG/EXE work |
-| ≥1 MiB installer round-trip | Pending verify after chunked deploy |
+| DDR-003 / DDR-005 chunked installers | Implemented + live (reinstall shipped chunk APIs) |
+| `dfx.json` vite asset build | Done (avoid pnpm TTY in dfx — DDR-007) |
+| CI build + optional deploy | Live |
+| Live IC URL | https://5xyyv-paaaa-aaaao-bbebq-cai.icp0.io (backend `5z2v5-…`) |
+| EOP field append lock | [DDR-006](../DDR/DDR-006-Dfx-EOP-Actor-Field-Append-Order.md) |
+| Ops pitfalls | [DDR-007](../DDR/DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md) |
+| ≥1 MiB / full DMG·EXE round-trip | Operator verify after Super Admin re-claim |

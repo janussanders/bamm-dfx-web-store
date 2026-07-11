@@ -19,7 +19,7 @@
    dfx canister call backend getSuperAdminClaimCode --network ic --identity anonymous --query
    ```
 
-   (Allowed only while **no** active admins exist. Caffeine’s container “system admin” does **not** exist on dfx.)  
+   (Allowed only while **no** active admins exist. Caffeine’s container “system admin” does **not** exist on dfx — [DDR-007](DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md).)  
 5. Invite other admins as needed  
 6. Upload Stripe key, RESEND key, license PEM, installers  
 

@@ -5,7 +5,7 @@
 **Product:** BAMM dfx Web Store  
 **Repo:** `janussanders/bamm-dfx-web-store`  
 **Baseline:** `bamm-e-commerce-site` tag **`v133.0.17`** (`3599db3`)  
-**Related:** [DDR-002](DDR-002-Dfx-Internet-Identity-Security.md), [DDR-003](DDR-003-Dfx-Object-Storage-Replacement.md), [DDR-004](DDR-004-Dfx-CI-Deploy-Agentic-URL.md)
+**Related:** [DDR-002](DDR-002-Dfx-Internet-Identity-Security.md), [DDR-003](DDR-003-Dfx-Object-Storage-Replacement.md), [DDR-004](DDR-004-Dfx-CI-Deploy-Agentic-URL.md), [DDR-005](DDR-005-Dfx-Chunked-Installer-Upload.md), [DDR-006](DDR-006-Dfx-EOP-Actor-Field-Append-Order.md), [DDR-007](DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md)
 
 ## Decision
 
