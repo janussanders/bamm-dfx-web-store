@@ -391,7 +391,7 @@ actor BAMM {
     serviceName = "BAMM_Email";
   };
 
-  // Legacy single-blob installers (pre-chunking). Kept for upgrade compatibility; new uploads use *Store.
+  // Installer files with metadata
   var macInstallerFile : ?{
     file : Blob;
     fileName : Text;
@@ -403,41 +403,6 @@ actor BAMM {
     fileName : Text;
     mimeType : Text;
   } = null;
-
-  // ── DDR-003 chunked installers (appended for EOP upgrade compatibility) ──
-  // Max bytes per ingress/query chunk (under IC ~2–3 MiB message limits).
-  let installerChunkMaxBytes : Nat = 1_500_000;
-
-  var macInstallerStore : ?{
-    fileName : Text;
-    mimeType : Text;
-    totalSize : Nat;
-    chunks : [Blob];
-  } = null;
-
-  var windowsInstallerStore : ?{
-    fileName : Text;
-    mimeType : Text;
-    totalSize : Nat;
-    chunks : [Blob];
-  } = null;
-
-  // In-progress chunked upload sessions (persistent so a retry can resume after a failed chunk).
-  var macUploadActive : Bool = false;
-  var macUploadFileName : Text = "";
-  var macUploadMime : Text = "";
-  var macUploadTotalSize : Nat = 0;
-  var macUploadTotalChunks : Nat = 0;
-  var macUploadReceived : Nat = 0;
-  var macUploadChunks = Map.empty<Nat, Blob>();
-
-  var windowsUploadActive : Bool = false;
-  var windowsUploadFileName : Text = "";
-  var windowsUploadMime : Text = "";
-  var windowsUploadTotalSize : Nat = 0;
-  var windowsUploadTotalChunks : Nat = 0;
-  var windowsUploadReceived : Nat = 0;
-  var windowsUploadChunks = Map.empty<Nat, Blob>();
 
   // ── RBAC Helper Functions ────────────────────────────────────────────────
 
@@ -3439,6 +3404,39 @@ actor BAMM {
   // Features excluded from the 30-day free trial — require a separate training
   // subscription and user agreement not yet implemented.
   let trialExcludedFeatures : [Text] = ["Trades", "Tx Simulator"];
+
+  // ── DDR-003 chunked installers (MUST stay after all pre-existing actor fields for EOP) ──
+  let installerChunkMaxBytes : Nat = 1_500_000;
+
+  var macInstallerStore : ?{
+    fileName : Text;
+    mimeType : Text;
+    totalSize : Nat;
+    chunks : [Blob];
+  } = null;
+
+  var windowsInstallerStore : ?{
+    fileName : Text;
+    mimeType : Text;
+    totalSize : Nat;
+    chunks : [Blob];
+  } = null;
+
+  var macUploadActive : Bool = false;
+  var macUploadFileName : Text = "";
+  var macUploadMime : Text = "";
+  var macUploadTotalSize : Nat = 0;
+  var macUploadTotalChunks : Nat = 0;
+  var macUploadReceived : Nat = 0;
+  var macUploadChunks = Map.empty<Nat, Blob>();
+
+  var windowsUploadActive : Bool = false;
+  var windowsUploadFileName : Text = "";
+  var windowsUploadMime : Text = "";
+  var windowsUploadTotalSize : Nat = 0;
+  var windowsUploadTotalChunks : Nat = 0;
+  var windowsUploadReceived : Nat = 0;
+  var windowsUploadChunks = Map.empty<Nat, Blob>();
 
   func isExcludedFromTrial(name : Text) : Bool {
     trialExcludedFeatures.contains(name);
