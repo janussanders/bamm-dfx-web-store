@@ -18,7 +18,7 @@
       "type": "assets",
       "source": ["src/frontend/dist"],
       "dependencies": ["backend"],
-      "build": "pnpm --dir src/frontend build"
+      "build": "cd src/frontend && ./node_modules/.bin/vite build && cp env.json dist/"
     }
   },
   "defaults": {
