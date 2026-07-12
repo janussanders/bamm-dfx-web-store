@@ -1,6 +1,6 @@
 # Dfx deploy & agentic URL
 
-**Related:** [DDR-003](../DDR/DDR-003-Dfx-Object-Storage-Replacement.md), [DDR-004](../DDR/DDR-004-Dfx-CI-Deploy-Agentic-URL.md), [DDR-005](../DDR/DDR-005-Dfx-Chunked-Installer-Upload.md), [DDR-006](../DDR/DDR-006-Dfx-EOP-Actor-Field-Append-Order.md), [DDR-007](../DDR/DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md)
+**Related:** [DDR-003](../DDR/DDR-003-Dfx-Object-Storage-Replacement.md), [DDR-004](../DDR/DDR-004-Dfx-CI-Deploy-Agentic-URL.md), [DDR-005](../DDR/DDR-005-Dfx-Chunked-Installer-Upload.md), [DDR-006](../DDR/DDR-006-Dfx-EOP-Actor-Field-Append-Order.md), [DDR-007](../DDR/DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md), [DDR-008](../DDR/DDR-008-Dfx-Primary-Caffeine-Backup.md), [DDR-009](../DDR/DDR-009-Custom-Domain-Bammservice.md), [DDR-010](../DDR/DDR-010-Email-Banner-Resend-Status.md)
 
 ## Failure map
 
@@ -87,4 +87,7 @@ Until the secret exists and the identity is funded, run the workflow with `deplo
 | Live IC URL | https://5xyyv-paaaa-aaaao-bbebq-cai.icp0.io (backend `5z2v5-…`) |
 | EOP field append lock | [DDR-006](../DDR/DDR-006-Dfx-EOP-Actor-Field-Append-Order.md) |
 | Ops pitfalls | [DDR-007](../DDR/DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md) |
+| Primary vs Caffeine backup | [DDR-008](../DDR/DDR-008-Dfx-Primary-Caffeine-Backup.md) |
+| Custom domain (`bammservice.com`) | [DDR-009](../DDR/DDR-009-Custom-Domain-Bammservice.md) |
+| Email banner false negative | [DDR-010](../DDR/DDR-010-Email-Banner-Resend-Status.md) |
 | ≥1 MiB / full DMG·EXE round-trip | Operator verify after Super Admin re-claim |

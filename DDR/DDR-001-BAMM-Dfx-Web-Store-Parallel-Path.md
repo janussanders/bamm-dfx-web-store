@@ -5,23 +5,24 @@
 **Product:** BAMM dfx Web Store  
 **Repo:** `janussanders/bamm-dfx-web-store`  
 **Baseline:** `bamm-e-commerce-site` tag **`v133.0.17`** (`3599db3`)  
-**Related:** [DDR-002](DDR-002-Dfx-Internet-Identity-Security.md), [DDR-003](DDR-003-Dfx-Object-Storage-Replacement.md), [DDR-004](DDR-004-Dfx-CI-Deploy-Agentic-URL.md), [DDR-005](DDR-005-Dfx-Chunked-Installer-Upload.md), [DDR-006](DDR-006-Dfx-EOP-Actor-Field-Append-Order.md), [DDR-007](DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md)
+**Related:** [DDR-002](DDR-002-Dfx-Internet-Identity-Security.md), [DDR-003](DDR-003-Dfx-Object-Storage-Replacement.md), [DDR-004](DDR-004-Dfx-CI-Deploy-Agentic-URL.md), [DDR-005](DDR-005-Dfx-Chunked-Installer-Upload.md), [DDR-006](DDR-006-Dfx-EOP-Actor-Field-Append-Order.md), [DDR-007](DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md), [DDR-008](DDR-008-Dfx-Primary-Caffeine-Backup.md), [DDR-009](DDR-009-Custom-Domain-Bammservice.md)
 
 ## Decision
 
-1. **Caffeine production stays on v133.0.12** (working entitlements at `bamm-gw3.caffeine.xyz` / backend `nae7q-yaaaa-aaaai-atnvq-cai`). No reinstall, no promote from this repo.
-2. This repository is a **second, independent storefront** deployed with **dfx + GitHub Actions**.
-3. Opening the **new URL** shows a full storefront with the **same functionality** as Caffeine (Premium, Admin, licenses, entitlements). It starts **empty**: operator sets up Internet Identity, claims Super Admin, uploads assets, configures Stripe and email.
+1. ~~Caffeine production stays sole customer path~~ → **Superseded for development priority by [DDR-008](DDR-008-Dfx-Primary-Caffeine-Backup.md):** dfx is **primary**; Caffeine **v133.0.12** is **backup** (`bamm-gw3` / `nae7q-…`). Do not iterate Caffeine unless restoring backup.
+2. This repository is the **active** storefront deployed with **dfx + GitHub Actions**.
+3. Opening the **dfx / future bammservice.com URL** shows the full storefront (Premium, Admin, licenses, entitlements). Bootstrap: Internet Identity → Super Admin claim → Stripe / RESEND / PEM / installers.
 4. Target is **functional equivalence**, not a byte-identical Caffeine runtime (see DDR-003).
+5. Brand DNS cutover: [DDR-009](DDR-009-Custom-Domain-Bammservice.md).
 
 ## Operator mental model
 
 ```
-Caffeine URL  →  live customers / desktop production canister
-Dfx URL       →  new empty store you bootstrap yourself
+Dfx URL / future bammservice.com  →  primary (develop & operate here)
+Caffeine bamm-gw3                 →  backup only (frozen)
 ```
 
-Data is **not** shared. Admins and purchases on Caffeine do not appear on dfx until deliberately recreated.
+Data is **not** shared with Caffeine unless deliberately recreated.
 
 ## Non-goals
 

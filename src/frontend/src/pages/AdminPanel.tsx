@@ -1387,7 +1387,9 @@ export default function AdminPanel() {
 
   const premiumFeatures =
     licenseFeatures?.filter((f) => f.isPremium && f.isActive) || [];
-  const isEmailSystemConfigured = !!resendConfig && !!trialLicenseFile;
+  // RESEND key presence is SSOT (getConfigurationStatus). Do not gate on trialLicenseFile —
+  // networked v2 licenses are signed on-canister (PEM); the legacy trial file is optional.
+  const isEmailSystemConfigured = !!configStatus?.resendConfigured;
 
   return (
     <div className="container py-20">
@@ -1465,12 +1467,16 @@ export default function AdminPanel() {
               purchases, please:
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>
-                  Configure RESEND API settings in the Automation tab (including
-                  service name)
+                  Configure and save RESEND API settings in the Automation tab
+                  (API key, sender email, service name)
                 </li>
-                <li>Upload a trial license file in the Automation tab</li>
                 <li>
-                  Ensure your RESEND API key is valid and has proper permissions
+                  Run <strong>Test Connection</strong> in the Automation tab
+                  until it succeeds
+                </li>
+                <li>
+                  Ensure the RSA private key is uploaded (Config / License
+                  signing) so license emails can be generated
                 </li>
               </ul>
             </AlertDescription>
