@@ -1,0 +1,17 @@
+[
+  {
+    "match": "**/*",
+  },
+  {
+    "match": ".well-known",
+    "ignore": false
+  },
+  {
+    "match": ".well-known/**/*",
+    "ignore": false,
+    "headers": {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "public, max-age=0"
+    }
+  }
+]

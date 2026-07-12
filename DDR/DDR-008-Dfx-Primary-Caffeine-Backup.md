@@ -16,7 +16,7 @@
 1. New features, admin fixes, installer hosting, Stripe/RESEND, and licensing changes land in **`bamm-dfx-web-store`** first.
 2. **Do not** invest in Caffeine import/promote/tag train unless restoring backup after a dfx outage.
 3. Desktop production cutover (pointing packaged apps at dfx canister IDs) remains a **separate** explicit decision — this DDR does **not** by itself change desktop activate URLs.
-4. Custom domain `www.bammservice.com` → dfx frontend is [DDR-009](DDR-009-Custom-Domain-Bammservice.md).
+4. Custom domain **`store.bammservice.com`** → dfx frontend is [DDR-009](DDR-009-Custom-Domain-Bammservice.md) (Option A).
 
 ## Operator mental model (updated)
 
