@@ -1,7 +1,7 @@
 # DDR-009: Custom domain `store.bammservice.com` → dfx frontend
 
 **Date:** 2026-07-12  
-**Status:** Implemented — Steps 1–4 live; II/Admin verified 2026-07-13; Stripe return URL still operator-check  
+**Status:** Implemented — Steps 1–5 complete (II/Admin + Stripe/RESEND verified 2026-07-13)  
 **Parent:** [DDR-008](DDR-008-Dfx-Primary-Caffeine-Backup.md)  
 **Frontend canister:** `5xyyv-paaaa-aaaao-bbebq-cai`  
 **Backend canister:** `5z2v5-uqaaa-aaaao-bbeaq-cai`  
@@ -106,7 +106,7 @@ Result: `registration_status: registered`; `https://store.bammservice.com/` → 
 - [x] `curl https://store.bammservice.com/` returns the BAMM storefront (not Squarespace) — verified 2026-07-13  
 - [x] `curl https://store.bammservice.com/.well-known/ic-domains` lists `store.bammservice.com` — verified 2026-07-13  
 - [x] II login → Admin works on `https://store.bammservice.com` (operator verified 2026-07-13)  
-- [ ] Stripe test checkout return URL works on `store.bammservice.com` (operator)  
+- [x] Stripe test checkout return URL works on `store.bammservice.com` (operator verified 2026-07-13; full Stripe + RESEND workflow OK)  
 - [x] Caffeine `bamm-gw3` left untouched (backup — DDR-008)  
 - [x] Live `env.json` has `ii_derivation_origin` = `https://store.bammservice.com` (after deploy)  
 - [x] `/.well-known/ii-alternative-origins` lists the frontend canister URL (after deploy)
