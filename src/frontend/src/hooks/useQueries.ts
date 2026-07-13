@@ -14,13 +14,17 @@ import type {
   LicenseFeature as _LicenseFeature,
 } from "@/backend";
 import { ExternalBlob } from "@/backend";
+import { useActor } from "@/hooks/useActor";
+import { useInternetIdentity } from "@/hooks/useInternetIdentity";
+import {
+  downloadInstallerChunked,
+  uploadInstallerChunked,
+} from "@/lib/chunkedInstaller";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Extend LicenseFeature with optional featureType for Features Management
 export type LicenseFeature = _LicenseFeature & { featureType?: string };
 export type LicenseBundle = _LicenseBundle;
-import { useActor } from "@/hooks/useActor";
-import { useInternetIdentity } from "@/hooks/useInternetIdentity";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // User submissions
 export function useSubmitUser() {
@@ -597,7 +601,6 @@ export function useUploadMacInstaller() {
       onProgress?: (percent: number) => void;
     }) => {
       if (!actor) throw new Error("Actor not available");
-      const { uploadInstallerChunked } = await import("@/lib/chunkedInstaller");
       await uploadInstallerChunked(actor, "mac", file, onProgress);
     },
     onSuccess: () => {
@@ -643,7 +646,6 @@ export function useUploadWindowsInstaller() {
       onProgress?: (percent: number) => void;
     }) => {
       if (!actor) throw new Error("Actor not available");
-      const { uploadInstallerChunked } = await import("@/lib/chunkedInstaller");
       await uploadInstallerChunked(actor, "windows", file, onProgress);
     },
     onSuccess: () => {
@@ -660,7 +662,6 @@ export function useDownloadMacInstaller() {
   return useMutation({
     mutationFn: async (onProgress?: (percent: number) => void) => {
       if (!actor) throw new Error("Actor not available");
-      const { downloadInstallerChunked } = await import("@/lib/chunkedInstaller");
       return downloadInstallerChunked(actor, "mac", onProgress);
     },
   });
@@ -672,7 +673,6 @@ export function useDownloadWindowsInstaller() {
   return useMutation({
     mutationFn: async (onProgress?: (percent: number) => void) => {
       if (!actor) throw new Error("Actor not available");
-      const { downloadInstallerChunked } = await import("@/lib/chunkedInstaller");
       return downloadInstallerChunked(actor, "windows", onProgress);
     },
   });

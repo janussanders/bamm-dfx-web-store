@@ -3,6 +3,12 @@
     "match": "**/*",
   },
   {
+    "match": "index.html",
+    "headers": {
+      "Cache-Control": "no-cache, no-store, must-revalidate"
+    }
+  },
+  {
     "match": ".well-known",
     "ignore": false
   },
