@@ -150,6 +150,18 @@ jobs:
           TARGET="${{ inputs.canisters }}"
           case "$TARGET" in
             frontend)
+              # dfx.json lists frontend → backend dependency, so plain
+              # `dfx deploy frontend` still upgrades Motoko and can IC0503.
+              # Drop the dependency for this install only.
+              python3 - <<'PY'
+              import json
+              from pathlib import Path
+              path = Path("dfx.json")
+              data = json.loads(path.read_text())
+              data["canisters"]["frontend"].pop("dependencies", None)
+              path.write_text(json.dumps(data, indent=2) + "\n")
+              print("frontend dependencies cleared for frontend-only deploy")
+              PY
               dfx deploy frontend --network "$DFX_NETWORK" --yes --identity ci
               ;;
             backend)
