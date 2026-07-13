@@ -91,7 +91,12 @@ export default function LandingPage() {
   const [basicOpen, setBasicOpen] = useState(false);
   const [premiumOpen, setPremiumOpen] = useState(false);
   const [lightbox, setLightbox] = useState<FeatureLightboxState>(null);
-  const { data: coreFeatures } = useGetCoreFeatures();
+  const {
+    data: coreFeatures,
+    isSuccess: coreFeaturesSuccess,
+    isError: coreFeaturesError,
+  } = useGetCoreFeatures();
+  const coreListSettled = coreFeaturesSuccess || coreFeaturesError;
 
   const features = [
     {
@@ -341,6 +346,7 @@ export default function LandingPage() {
                       alt="Dashboard preview"
                       enableLightbox
                       hideWhenEmpty
+                      listSettled={coreListSettled}
                       imgClassName="w-full h-auto object-contain max-h-80"
                       onOpenLightbox={setLightbox}
                     />
@@ -393,6 +399,7 @@ export default function LandingPage() {
                       alt="Bill Files preview"
                       enableLightbox
                       hideWhenEmpty
+                      listSettled={coreListSettled}
                       imgClassName="w-full h-auto object-contain max-h-80"
                       onOpenLightbox={setLightbox}
                     />
@@ -460,6 +467,7 @@ export default function LandingPage() {
                       alt="Income and Bill Tracking preview"
                       enableLightbox
                       hideWhenEmpty
+                      listSettled={coreListSettled}
                       imgClassName="w-full h-auto object-contain max-h-80"
                       onOpenLightbox={setLightbox}
                     />

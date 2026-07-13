@@ -695,28 +695,52 @@ export function useGetLicenseFeatures() {
   });
 }
 
-/** On-demand feature marketing image (DDR-039). */
+/**
+ * On-demand feature marketing image (DDR-039 / homepage Free images).
+ *
+ * Prefer `embedded` bytes from a list query when present. Do not fetch
+ * `getFeatureImage` until the parent list has settled — otherwise a cold
+ * homepage load races: fetch fails/null (method missing or not ready), caches
+ * null under ["featureImage", id], then ignores embedded bytes when
+ * getCoreFeatures arrives (Premium avoided this by mounting after the list).
+ */
 export function useFeatureImage(
   featureId: string | undefined,
   embedded?: Uint8Array,
+  options?: { listSettled?: boolean },
 ) {
   const { actor, isFetching } = useActor();
+  const hasEmbedded = !!(embedded && embedded.byteLength > 0);
+  /** When false, wait before network fetch (homepage Free). Default true for late-mounted Premium cards. */
+  const listSettled = options?.listSettled ?? true;
 
-  return useQuery<Uint8Array | null>({
+  const query = useQuery<Uint8Array | null>({
     queryKey: ["featureImage", featureId],
     queryFn: async () => {
-      if (embedded && embedded.byteLength > 0) return embedded;
       if (!actor || !featureId) return null;
       try {
         return await actor.getFeatureImage(featureId);
       } catch {
-        // Method missing until backend upgrade, or no image stored.
-        return embedded && embedded.byteLength > 0 ? embedded : null;
+        // Method missing until Motoko upgrade (IC0503), or no image stored.
+        return null;
       }
     },
-    enabled: !!featureId && ((!isFetching && !!actor) || !!(embedded && embedded.byteLength > 0)),
+    enabled:
+      !!featureId &&
+      !!actor &&
+      !isFetching &&
+      listSettled &&
+      !hasEmbedded,
     staleTime: 60_000,
   });
+
+  return {
+    ...query,
+    data: hasEmbedded ? embedded! : (query.data ?? null),
+    isLoading: hasEmbedded
+      ? false
+      : !listSettled || query.isLoading || query.isFetching,
+  };
 }
 
 // Premium features - fetches only active premium features directly from backend getPremiumFeatures()

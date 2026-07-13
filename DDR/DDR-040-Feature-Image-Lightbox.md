@@ -149,6 +149,6 @@ const [lightbox, setLightbox] = useState<null | { alt: string; bytes: Uint8Array
 - [ ] Admin upload / Initialize / Recover list still work (smoke).
 - [ ] No Motoko deploy required for this feature.
 
-## Consequence
+## Homepage Free images vs Premium (follow-up)
 
-Shoppers can inspect Free and Premium marketing screenshots in detail before buying, while Premium card clicks remain the payment-selection path. Stripe, RESEND, and Admin image persistence workflows stay isolated from the lightbox UI.
+Premium cards mount `FeatureImagePreview` only after `getPremiumFeatures` returns, so `embedded` is available on first image query. Homepage Free mounted previews immediately and raced a null `getFeatureImage` cache before `getCoreFeatures` embedded bytes arrived — images appeared after Admin upload (query invalidate) but vanished on refresh. Fix: prefer embedded bytes; wait for `listSettled` before network fetch.

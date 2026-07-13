@@ -18,6 +18,11 @@ type Props = {
   imgClassName?: string;
   /** When true, render nothing if no image. */
   hideWhenEmpty?: boolean;
+  /**
+   * Parent list query finished (success or error). Homepage Free must pass this
+   * so we do not race-cache a null getFeatureImage before embedded bytes arrive.
+   */
+  listSettled?: boolean;
   onOpenLightbox?: (state: NonNullable<FeatureLightboxState>) => void;
 };
 
@@ -34,9 +39,12 @@ export function FeatureImagePreview({
   className,
   imgClassName = "w-full h-auto object-contain max-h-80",
   hideWhenEmpty = false,
+  listSettled = true,
   onOpenLightbox,
 }: Props) {
-  const { data: bytes, isLoading } = useFeatureImage(featureId, embedded);
+  const { data: bytes, isLoading } = useFeatureImage(featureId, embedded, {
+    listSettled,
+  });
   const [canHover, setCanHover] = useState(true);
 
   useEffect(() => {
