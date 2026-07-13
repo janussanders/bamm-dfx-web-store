@@ -219,13 +219,13 @@ Recommended long-term: **CI publishes installers to CDN/R2 (or GitHub Release)**
 
 ### Phase A — Implemented (2026-07-13)
 
-1. **Parallelize** customer chunk **download** and admin chunk **upload** (concurrency 6, 3 retries, progress by completed chunks) in `src/frontend/src/lib/chunkedInstaller.ts`.
+1. **Parallelize** customer chunk **download** and admin chunk **upload** (concurrency 4, 3 retries, progress by completed chunks) in `src/frontend/src/lib/chunkedInstaller.ts`.
 2. Measure wall-clock before/after on mainnet (Mac + Windows) and document here.
 3. Optional UX: show MB/s + ETA; “resume” by caching completed chunk indices in `IndexedDB` (nice-to-have).
 
 **Success metric:** ≥2× faster median **download** on a reference connection without changing storage.
 
-**Note on upload:** Same engineering cost; expected wall-clock gain is smaller than download because update consensus cannot fully parallelize. Still worth it for admin UX (pipelined RTTs + retries).
+**Measured (2026-07-13, production `store.bammservice.com`):** installer **upload and download ~15–20 seconds** after Phase A (+ OOM / stale-chunk hotfixes). Previously on the order of **minutes** when sequential (DDR-005). Metric met.
 
 ### Phase A hotfix (2026-07-13) — Chrome Aw Snap / Error 5
 
