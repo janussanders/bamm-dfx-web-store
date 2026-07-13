@@ -14,6 +14,7 @@
 | [DDR-008](DDR-008-Dfx-Primary-Caffeine-Backup.md) | Dfx primary / Caffeine backup | Approved | 2026-07-12 |
 | [DDR-009](DDR-009-Custom-Domain-Bammservice.md) | Custom domain store.bammservice.com → IC (Option A) | Implemented | 2026-07-12 |
 | [DDR-010](DDR-010-Email-Banner-Resend-Status.md) | Email banner false negative fix | Implemented | 2026-07-12 |
+| [DDR-037](DDR-037-Free-Features-Marketing-Images.md) | Free Features admin images → homepage Learn More | Implemented | 2026-07-13 |
 
 **Runbook:** [docs/dfx-deploy.md](../docs/dfx-deploy.md) · **CI identity:** [docs/dfx-ci-identity.md](../docs/dfx-ci-identity.md)
 

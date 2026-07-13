@@ -112,7 +112,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import BundleManagementPanel from "../components/BundleManagementPanel";
 import EntitlementRegistryPanel from "../components/EntitlementRegistryPanel";
@@ -139,6 +139,7 @@ import {
   useGetTrialLicenseFile,
   useGetUserSubmissions,
   useGetWindowsInstaller,
+  useInitializeDefaultCoreFeatures,
   useInitializeDefaultPremiumFeatures,
   useIsAdmin,
   useIsStripeConfigured,
@@ -402,6 +403,7 @@ export default function AdminPanel() {
   const testResendConnection = useTestResendConnection();
   const _updateServiceName = useUpdateResendServiceName();
   const initializeFeatures = useInitializeDefaultPremiumFeatures();
+  const initializeCoreFeatures = useInitializeDefaultCoreFeatures();
   const updatePurchaseMutation = useUpdatePurchase();
   const resendLicenseMutation = useResendLicense();
   const deletePurchaseMutation = useDeletePremiumPurchase();
@@ -588,6 +590,25 @@ export default function AdminPanel() {
       toast.error("Failed to initialize features");
     }
   };
+
+  const handleInitializeCoreFeatures = async () => {
+    try {
+      await initializeCoreFeatures.mutateAsync();
+      toast.success("Default free features initialized successfully");
+    } catch (error) {
+      console.error("Core feature initialization error:", error);
+      toast.error("Failed to initialize free features");
+    }
+  };
+
+  const premiumFeaturesList = useMemo(
+    () => (licenseFeatures ?? []).filter((f) => f.isPremium),
+    [licenseFeatures],
+  );
+  const freeFeaturesList = useMemo(
+    () => (licenseFeatures ?? []).filter((f) => !f.isPremium),
+    [licenseFeatures],
+  );
 
   const handleStripeSetup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2084,12 +2105,12 @@ export default function AdminPanel() {
                     <div>
                       <CardTitle>Features Management</CardTitle>
                       <CardDescription>
-                        Manage Premium Products and License Generation
+                        Manage Premium products and Free Feature marketing images
                       </CardDescription>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    {licenseFeatures && licenseFeatures.length === 0 && (
+                    {licenseFeatures && premiumFeaturesList.length === 0 && (
                       <Button
                         variant="outline"
                         onClick={handleInitializeFeatures}
@@ -2284,8 +2305,17 @@ export default function AdminPanel() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                {licenseFeatures && licenseFeatures.length > 0 ? (
+              <CardContent className="space-y-10">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-semibold">Premium Features</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Paid modules, pricing, and storefront product images
+                      </p>
+                    </div>
+                  </div>
+                {premiumFeaturesList.length > 0 ? (
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -2301,7 +2331,7 @@ export default function AdminPanel() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {licenseFeatures.map((feature) => (
+                      {premiumFeaturesList.map((feature) => (
                         <TableRow key={feature.id}>
                           <TableCell>
                             <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
@@ -2429,7 +2459,7 @@ export default function AdminPanel() {
                 ) : (
                   <div className="text-center py-8 space-y-4">
                     <p className="text-muted-foreground">
-                      No features configured yet
+                      No premium features configured yet
                     </p>
                     <Button
                       onClick={handleInitializeFeatures}
@@ -2446,6 +2476,181 @@ export default function AdminPanel() {
                     </Button>
                   </div>
                 )}
+                </div>
+
+                <div className="space-y-4 border-t pt-8">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-semibold">Free Features</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Homepage Learn More images for Dashboard, Bill Files, and
+                        Income and Bill Tracking
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={handleInitializeCoreFeatures}
+                      disabled={initializeCoreFeatures.isPending}
+                    >
+                      {initializeCoreFeatures.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Initializing...
+                        </>
+                      ) : (
+                        "Initialize Default Free Features"
+                      )}
+                    </Button>
+                  </div>
+                  {freeFeaturesList.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Image</TableHead>
+                          <TableHead>ID</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {freeFeaturesList.map((feature) => (
+                          <TableRow key={feature.id}>
+                            <TableCell>
+                              <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                                {feature.image ? (
+                                  <img
+                                    src={ExternalBlob.fromBytes(
+                                      feature.image,
+                                    ).getDirectURL()}
+                                    alt={feature.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {feature.id}
+                            </TableCell>
+                            <TableCell>{feature.name}</TableCell>
+                            <TableCell className="max-w-md truncate">
+                              {feature.description}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={feature.isActive}
+                                  onCheckedChange={() =>
+                                    handleToggleFeatureStatus(
+                                      feature.id,
+                                      feature.isActive,
+                                    )
+                                  }
+                                  disabled={updateFeatureStatus.isPending}
+                                />
+                                <span className="text-sm text-muted-foreground">
+                                  {feature.isActive ? "Enabled" : "Disabled"}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <div className="relative">
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) =>
+                                      handleFeatureImageUpload(feature.id, e)
+                                    }
+                                    className="hidden"
+                                    id={`image-upload-${feature.id}`}
+                                    disabled={uploadingImageFor === feature.id}
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      document
+                                        .getElementById(
+                                          `image-upload-${feature.id}`,
+                                        )
+                                        ?.click()
+                                    }
+                                    disabled={uploadingImageFor === feature.id}
+                                    title={
+                                      feature.image
+                                        ? "Replace image"
+                                        : "Upload image"
+                                    }
+                                  >
+                                    {uploadingImageFor === feature.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Upload className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </div>
+                                {feature.image && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleRemoveFeatureImage(feature.id)
+                                    }
+                                    disabled={removeFeatureImage.isPending}
+                                    title="Remove image"
+                                  >
+                                    <X className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditFeature(feature)}
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleDeleteFeature(feature.id)
+                                  }
+                                  disabled={deleteLicenseFeature.isPending}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-8 space-y-4 rounded-lg border border-dashed">
+                      <p className="text-muted-foreground">
+                        No free features yet. Initialize the three homepage
+                        categories, then upload images.
+                      </p>
+                      <Button
+                        onClick={handleInitializeCoreFeatures}
+                        disabled={initializeCoreFeatures.isPending}
+                      >
+                        {initializeCoreFeatures.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Initializing...
+                          </>
+                        ) : (
+                          "Initialize Default Free Features"
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
 
                 {uploadingImageFor && (
                   <div className="mt-4 space-y-2">

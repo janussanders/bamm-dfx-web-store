@@ -497,6 +497,7 @@ export interface backendInterface {
     getWindowsInstallerMeta(): Promise<InstallerMeta | null>;
     incrementDownloadCount(email: string): Promise<void>;
     initializeDefaultLicenseBundles(): Promise<void>;
+    initializeDefaultCoreFeatures(): Promise<void>;
     initializeDefaultPremiumFeatures(): Promise<void>;
     inviteAdmin(name: string, email: string, role: AdminRole): Promise<Result>;
     isAdminByRole(): Promise<boolean>;
@@ -1863,6 +1864,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.initializeDefaultLicenseBundles();
+            return result;
+        }
+    }
+    async initializeDefaultCoreFeatures(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.initializeDefaultCoreFeatures();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.initializeDefaultCoreFeatures();
             return result;
         }
     }

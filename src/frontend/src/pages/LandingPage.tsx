@@ -28,9 +28,11 @@ import {
   Users,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import DownloadForm from "../components/DownloadForm";
 import RegulatedFeatureDisclaimer from "../components/RegulatedFeatureDisclaimer";
+import { ExternalBlob } from "../backend";
+import { useGetCoreFeatures } from "../hooks/useQueries";
 import {
   BASIC_BILLS_INTRO,
   BASIC_DASHBOARD_INTRO,
@@ -84,6 +86,17 @@ export default function LandingPage() {
   const [showDownloadForm, setShowDownloadForm] = useState(false);
   const [basicOpen, setBasicOpen] = useState(false);
   const [premiumOpen, setPremiumOpen] = useState(false);
+  const { data: coreFeatures } = useGetCoreFeatures();
+
+  const coreImageById = useMemo(() => {
+    const map = new Map<string, Uint8Array>();
+    for (const feature of coreFeatures ?? []) {
+      if (feature.image) {
+        map.set(feature.id, feature.image);
+      }
+    }
+    return map;
+  }, [coreFeatures]);
 
   const features = [
     {
@@ -325,6 +338,17 @@ export default function LandingPage() {
                     <p className="text-muted-foreground">
                       {BASIC_DASHBOARD_INTRO}
                     </p>
+                    {coreImageById.get("dashboard") && (
+                      <div className="rounded-lg overflow-hidden bg-muted/30 border border-border/40">
+                        <img
+                          src={ExternalBlob.fromBytes(
+                            coreImageById.get("dashboard")!,
+                          ).getDirectURL()}
+                          alt="Dashboard preview"
+                          className="w-full h-auto object-cover"
+                        />
+                      </div>
+                    )}
                     <ul className="space-y-3 ml-9">
                       <li className="flex gap-3">
                         <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -366,6 +390,17 @@ export default function LandingPage() {
                       <h3 className="text-xl font-bold">Bill Files</h3>
                     </div>
                     <p className="text-muted-foreground">{BASIC_BILLS_INTRO}</p>
+                    {coreImageById.get("bill_files") && (
+                      <div className="rounded-lg overflow-hidden bg-muted/30 border border-border/40">
+                        <img
+                          src={ExternalBlob.fromBytes(
+                            coreImageById.get("bill_files")!,
+                          ).getDirectURL()}
+                          alt="Bill Files preview"
+                          className="w-full h-auto object-cover"
+                        />
+                      </div>
+                    )}
                     <ul className="space-y-3 ml-9">
                       <li className="flex gap-3">
                         <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -421,6 +456,17 @@ export default function LandingPage() {
                     <p className="text-muted-foreground">
                       {BASIC_INCOME_TRACKING_INTRO}
                     </p>
+                    {coreImageById.get("income_tracking") && (
+                      <div className="rounded-lg overflow-hidden bg-muted/30 border border-border/40">
+                        <img
+                          src={ExternalBlob.fromBytes(
+                            coreImageById.get("income_tracking")!,
+                          ).getDirectURL()}
+                          alt="Income and Bill Tracking preview"
+                          className="w-full h-auto object-cover"
+                        />
+                      </div>
+                    )}
                     <ul className="space-y-3 ml-9">
                       <li className="flex gap-3">
                         <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />

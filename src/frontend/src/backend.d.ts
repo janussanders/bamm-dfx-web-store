@@ -450,6 +450,7 @@ export interface backendInterface {
     getWindowsInstallerMeta(): Promise<InstallerMeta | null>;
     incrementDownloadCount(email: string): Promise<void>;
     initializeDefaultLicenseBundles(): Promise<void>;
+    initializeDefaultCoreFeatures(): Promise<void>;
     initializeDefaultPremiumFeatures(): Promise<void>;
     inviteAdmin(name: string, email: string, role: AdminRole): Promise<Result>;
     isAdminByRole(): Promise<boolean>;

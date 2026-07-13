@@ -77,8 +77,8 @@ export default function LicenseGenerationPanel({
   const uploadPrivateKeyPem = useUploadPrivateKeyPem();
   const generateLicense = useGenerateLicense();
   const sendManualLicense = useSendManualLicense();
-  // getLicenseFeatures() returns ALL license features — admins can select any combination
-  // including Tx Simulator and Trades
+  // getLicenseFeatures() returns ALL license features — license generation uses premium only
+  // (core/free marketing rows stay out of checkout / RSA feature pickers)
   const {
     data: licenseFeatures,
     isLoading: featuresLoading,
@@ -87,8 +87,9 @@ export default function LicenseGenerationPanel({
     refetch: refetchFeatures,
     isFetching: featuresRefetching,
   } = useGetLicenseFeatures();
-  // Active license features drive the admin selection panel
-  const activeProducts = licenseFeatures?.filter((f) => f.isActive) ?? [];
+  // Active premium features drive the admin selection panel
+  const activeProducts =
+    licenseFeatures?.filter((f) => f.isActive && f.isPremium) ?? [];
 
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);

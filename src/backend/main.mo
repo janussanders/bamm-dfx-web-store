@@ -2555,6 +2555,57 @@ actor BAMM {
     };
   };
 
+  // Initialize default free/core features for homepage Learn More marketing images.
+  // Idempotent: only inserts missing ids; does not overwrite existing images.
+  public shared ({ caller }) func initializeDefaultCoreFeatures() : async () {
+    if (not (isAdmin(caller))) {
+      Runtime.trap("Unauthorized: Only admins can initialize default core features");
+    };
+
+    let defaultCore : [LicenseFeature] = [
+      {
+        id = "dashboard";
+        name = "Dashboard";
+        description = "Your financial command center. See income, expenses, and balances in one view.";
+        isPremium = false;
+        isActive = true;
+        priceInCents = 0;
+        image = null;
+        featureType = "Core";
+        licenseReferenceName = "";
+      },
+      {
+        id = "bill_files";
+        name = "Bill Files";
+        description = "Organize, track, and manage bills with due dates and payment status.";
+        isPremium = false;
+        isActive = true;
+        priceInCents = 0;
+        image = null;
+        featureType = "Core";
+        licenseReferenceName = "";
+      },
+      {
+        id = "income_tracking";
+        name = "Income and Bill Tracking";
+        description = "Track income sources and spending so you always know what is left after bills.";
+        isPremium = false;
+        isActive = true;
+        priceInCents = 0;
+        image = null;
+        featureType = "Core";
+        licenseReferenceName = "";
+      },
+    ];
+
+    for (feature in defaultCore.values()) {
+      switch (licenseFeatures.get(feature.id)) {
+        case (?_) {};
+        case null { licenseFeatures.add(feature.id, feature) };
+      };
+    };
+  };
+
   private func computeBundlePricing(featureIds : [Text], priceInCentsAnnual : Nat) : (Nat, Nat) {
     var sum : Nat = 0;
     for (fid in featureIds.vals()) {
@@ -5066,8 +5117,17 @@ actor BAMM {
         if (feature.name == oldName) {
           switch (maybeNewName) {
             case null {
-              licenseFeatures.remove(featureId);
-              log #= "Removed: " # oldName # "; ";
+              // Keep intentional core/free marketing records used for homepage Learn More images.
+              if (
+                featureId == "dashboard" or
+                featureId == "bill_files" or
+                featureId == "income_tracking"
+              ) {
+                // skip
+              } else {
+                licenseFeatures.remove(featureId);
+                log #= "Removed: " # oldName # "; ";
+              };
             };
             case (?newName) {
               let updated : LicenseFeature = {
@@ -5083,9 +5143,10 @@ actor BAMM {
       };
     };
 
-    // Ensure all features have a licenseReferenceName populated (back-fill from name)
+    // Ensure all premium features have a licenseReferenceName populated (back-fill from name).
+    // Core/free marketing features may keep an empty reference so they stay out of license name matching.
     for ((featureId, feature) in licenseFeatures.entries().toArray().vals()) {
-      if (feature.licenseReferenceName == "") {
+      if (feature.isPremium and feature.licenseReferenceName == "") {
         licenseFeatures.add(featureId, { feature with licenseReferenceName = feature.name });
         log #= "BackfilledRef: " # feature.name # "; ";
       };

@@ -711,6 +711,22 @@ export function useGetPremiumFeatures() {
   });
 }
 
+// Core/free features — homepage Learn More marketing images (isPremium=false)
+export function useGetCoreFeatures() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<LicenseFeature[]>({
+    queryKey: ["coreFeatures"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getCoreFeatures();
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+}
+
 // Trial-eligible feature names — authoritative list for 30-day free trial license
 // Returns feature names already filtered by backend (excludes Tx Simulator and Trades)
 export function useGetTrialEligibleFeatures() {
@@ -811,6 +827,22 @@ export function useInitializeDefaultPremiumFeatures() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["licenseFeatures"] });
       queryClient.invalidateQueries({ queryKey: ["premiumFeatures"] });
+    },
+  });
+}
+
+export function useInitializeDefaultCoreFeatures() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error("Actor not available");
+      return actor.initializeDefaultCoreFeatures();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["licenseFeatures"] });
+      queryClient.invalidateQueries({ queryKey: ["coreFeatures"] });
     },
   });
 }
@@ -942,6 +974,7 @@ export function useUploadFeatureImage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["licenseFeatures"] });
       queryClient.invalidateQueries({ queryKey: ["premiumFeatures"] });
+      queryClient.invalidateQueries({ queryKey: ["coreFeatures"] });
     },
   });
 }
@@ -958,6 +991,7 @@ export function useRemoveFeatureImage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["licenseFeatures"] });
       queryClient.invalidateQueries({ queryKey: ["premiumFeatures"] });
+      queryClient.invalidateQueries({ queryKey: ["coreFeatures"] });
     },
   });
 }

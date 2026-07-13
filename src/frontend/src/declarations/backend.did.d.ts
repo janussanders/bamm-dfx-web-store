@@ -410,6 +410,7 @@ export interface _SERVICE {
   'getWindowsInstallerMeta' : ActorMethod<[], [] | [InstallerMeta]>,
   'incrementDownloadCount' : ActorMethod<[string], undefined>,
   'initializeDefaultLicenseBundles' : ActorMethod<[], undefined>,
+  'initializeDefaultCoreFeatures' : ActorMethod<[], undefined>,
   'initializeDefaultPremiumFeatures' : ActorMethod<[], undefined>,
   'inviteAdmin' : ActorMethod<[string, string, AdminRole], Result>,
   'isAdminByRole' : ActorMethod<[], boolean>,
