@@ -17,6 +17,7 @@
 | [DDR-037](DDR-037-Free-Features-Marketing-Images.md) | Free Features admin images → homepage Learn More | Implemented | 2026-07-13 |
 | [DDR-038](DDR-038-Dfx-IC0503-Deploy-Decision-Tree.md) | IC0503: when frontend vs backend deploys succeed | Implemented (lock) | 2026-07-13 |
 | [DDR-039](DDR-039-Feature-Image-List-Query-Overflow.md) | Feature images blow list queries → false empty Admin | Implemented | 2026-07-13 |
+| [DDR-040](DDR-040-Feature-Image-Lightbox.md) | Free/Premium image lightbox + Premium View chip | Approved (design) | 2026-07-13 |
 
 **Runbook:** [docs/dfx-deploy.md](../docs/dfx-deploy.md) · **CI identity:** [docs/dfx-ci-identity.md](../docs/dfx-ci-identity.md)
 
@@ -27,6 +28,7 @@
 | Installer bar → 100%, file missing | [DDR-005](DDR-005-Dfx-Chunked-Installer-Upload.md) |
 | `Memory-incompatible program upgrade` / IC0503 on backend upgrade | [DDR-006](DDR-006-Dfx-EOP-Actor-Field-Append-Order.md) + [DDR-038](DDR-038-Dfx-IC0503-Deploy-Decision-Tree.md) |
 | Features Management empty after image upload / wants re-init | [DDR-039](DDR-039-Feature-Image-List-Query-Overflow.md) |
+| Premium image click steals selection / lightbox vs Stripe | [DDR-040](DDR-040-Feature-Image-Lightbox.md) |
 | dfx hang / keyring; cycles create vs install; pnpm TTY; no admin after II | [DDR-007](DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md) |
 | No Super Admin after II login | [DDR-002](DDR-002-Dfx-Internet-Identity-Security.md) |
 | Email ready but yellow “Configuration Required” banner | [DDR-010](DDR-010-Email-Banner-Resend-Status.md) |
