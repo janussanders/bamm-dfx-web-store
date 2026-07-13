@@ -1,11 +1,18 @@
 #!/usr/bin/env node
 /**
- * Stamp storefront version for UI (DDR-029).
+ * Stamp storefront version for UI (DDR-029 / DDR-038).
  * Writes src/frontend/src/generated/storefrontVersion.ts from git tag or CLI arg.
  *
  * Usage:
  *   node scripts/write-storefront-version.mjs           # git describe
  *   node scripts/write-storefront-version.mjs v133.0.13 # explicit tag
+ *
+ * Env overrides (CI):
+ *   STOREFRONT_VERSION — force label (e.g. v133.0.16)
+ *   GITHUB_SHA — when set, prefer short SHA over dirty local describe
+ *
+ * Never emit git's "-dirty" suffix (reads poorly in the footer). Uncommitted
+ * local builds use "-local" instead; CI clean builds omit that suffix.
  */
 
 import { execSync } from 'node:child_process';
@@ -21,41 +28,84 @@ function fail(message) {
   process.exit(1);
 }
 
+function git(cmd) {
+  return execSync(cmd, {
+    cwd: ROOT,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  }).trim();
+}
+
+function workingTreeDirty() {
+  try {
+    return git('git status --porcelain').length > 0;
+  } catch {
+    return false;
+  }
+}
+
 function resolveTag() {
+  if (process.env.STOREFRONT_VERSION) {
+    return process.env.STOREFRONT_VERSION.trim();
+  }
+
   const arg = process.argv[2];
   if (arg) {
-    if (!/^v?\d+\.\d+\.\d+/.test(arg) && arg !== 'dev') {
-      // allow git describe style too
-    }
     return arg.startsWith('v') || arg === 'dev' ? arg : `v${arg}`;
   }
+
+  // Prefer exact tag at HEAD
   try {
-    const described = execSync('git describe --tags --exact-match HEAD', {
-      cwd: ROOT,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
-    if (described) return described;
+    const exact = git('git describe --tags --exact-match HEAD');
+    if (exact) return exact;
   } catch {
     // not on exact tag
   }
+
+  // CI: stable label from SHA (mops/build artifacts often dirty the tree)
+  if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true') {
+    const sha =
+      (process.env.GITHUB_SHA || '').trim() ||
+      (() => {
+        try {
+          return git('git rev-parse HEAD');
+        } catch {
+          return '';
+        }
+      })();
+    if (sha) {
+      try {
+        const described = git('git describe --tags --always');
+        // Drop any accidental -dirty from older git defaults
+        return described.replace(/-dirty$/, '');
+      } catch {
+        return sha.slice(0, 7);
+      }
+    }
+  }
+
   try {
-    return execSync('git describe --tags --always --dirty', {
-      cwd: ROOT,
-      encoding: 'utf8',
-    }).trim();
+    let described = git('git describe --tags --always');
+    described = described.replace(/-dirty$/, '');
+    // Local uncommitted work: use -local (not git's -dirty wording)
+    if (workingTreeDirty() && !described.endsWith('-local')) {
+      described = `${described}-local`;
+    }
+    return described;
   } catch {
     return 'dev';
   }
 }
 
 const tag = resolveTag();
+if (!tag) fail('empty storefront version');
+
 const commit = (() => {
   try {
-    return execSync('git rev-parse --short HEAD', {
-      cwd: ROOT,
-      encoding: 'utf8',
-    }).trim();
+    if (process.env.GITHUB_SHA) {
+      return process.env.GITHUB_SHA.trim().slice(0, 7);
+    }
+    return git('git rev-parse --short HEAD');
   } catch {
     return 'unknown';
   }

@@ -62,3 +62,7 @@ After deploy: module hash changes; `dfx canister status backend --network ic` sh
 ## Consequence
 
 Chunked installer stores and future features can ship via upgrade without wiping the parallel store — if and only if field append order is respected.
+
+## Deploy outcome pattern (see DDR-038)
+
+Frontend-only deploys succeed; backend/`all` succeed only when the candidate wasm matches the live module hash (no-op) or the EOP layout is compatible. Repeated IC0503 on method-only Motoko edits means the live canister is **layout-locked** — use [DDR-038](DDR-038-Dfx-IC0503-Deploy-Decision-Tree.md) (frontend-only by default; operator reinstall / migration for permanent unlock).

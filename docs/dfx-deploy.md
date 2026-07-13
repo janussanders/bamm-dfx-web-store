@@ -7,8 +7,18 @@
 | Symptom | DDR |
 |---------|-----|
 | Installer upload bar → 100%, nothing stored | [DDR-005](../DDR/DDR-005-Dfx-Chunked-Installer-Upload.md) |
-| `Memory-incompatible program upgrade` (IC0503) on backend | [DDR-006](../DDR/DDR-006-Dfx-EOP-Actor-Field-Append-Order.md) |
+| `Memory-incompatible program upgrade` (IC0503) on backend | [DDR-006](../DDR/DDR-006-Dfx-EOP-Actor-Field-Append-Order.md) + [DDR-038](../DDR/DDR-038-Dfx-IC0503-Deploy-Decision-Tree.md) |
 | Keyring hang, cycles, pnpm/vite deploy, no admin after II | [DDR-007](../DDR/DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md) |
+
+## Deploy target cheat sheet (agents)
+
+| `canisters=` | When | Notes |
+|--------------|------|-------|
+| **`frontend`** (default for UI) | React/Admin/landing/copy | Clears frontend→backend dep so Motoko is not touched |
+| `backend` / `all` | New Motoko APIs or appended persistent fields | May IC0503 if live layout is frozen |
+| On IC0503 | Stop; ship frontend-only; escalate reinstall | Not fixed by cycles top-up |
+
+See [DDR-038](../DDR/DDR-038-Dfx-IC0503-Deploy-Decision-Tree.md).
 
 ## validate-snapshot — is it necessary?
 

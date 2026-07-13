@@ -23,6 +23,7 @@ Do **not** conflate storefront `v133.x` with desktop `v30.x` (DDR-015).
 
 - `scripts/write-storefront-version.mjs` writes `src/frontend/src/generated/storefrontVersion.ts`
 - Frontend `pnpm build` / `pnpm dev` run the stamp first
+- Never show git’s `-dirty` suffix in the footer; local uncommitted builds use `-local`; CI omits that suffix (mops/build often dirties the tree)
 - `pnpm release:caffeine -- <tag>` stamps the release tag before publish
 
 ### Installer naming (required on upload)

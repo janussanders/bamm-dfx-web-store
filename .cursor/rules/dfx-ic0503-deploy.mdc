@@ -1,0 +1,27 @@
+---
+description: Dfx IC deploy targets and IC0503 decision tree (DDR-038)
+alwaysApply: true
+---
+
+# Dfx deploy / IC0503 (DDR-038)
+
+## Default
+
+Ship UI with **`canisters=frontend`**. Do not default to `all`.
+
+```bash
+gh workflow run "Deploy dfx (IC)" -f network=ic -f deploy=true -f canisters=frontend
+```
+
+## When backend / all fails with IC0503
+
+- Stop retrying `all` / burning cycles
+- Frontend-only still works (clear frontend→backend dep in workflow)
+- Escalate operator **reinstall** or Motoko migration — not Caffeine `redeploy_draft`, not cycles top-up
+- New persistent `let`/`var` must be **append-only** after the last actor field (DDR-006)
+
+## Docs
+
+- [DDR-038](DDR/DDR-038-Dfx-IC0503-Deploy-Decision-Tree.md)
+- [AGENTS.md](AGENTS.md)
+- [docs/dfx-deploy.md](docs/dfx-deploy.md)

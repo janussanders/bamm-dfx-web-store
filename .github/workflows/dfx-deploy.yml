@@ -21,14 +21,14 @@ on:
         default: false
         type: boolean
       canisters:
-        description: 'Which canisters to deploy (frontend-only avoids backend IC0503)'
+        description: 'Which canisters to deploy (default frontend — avoids backend IC0503; see DDR-038)'
         required: true
-        default: 'all'
+        default: 'frontend'
         type: choice
         options:
-          - all
           - frontend
           - backend
+          - all
 
 permissions:
   contents: read

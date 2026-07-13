@@ -49,15 +49,7 @@ export default function Footer() {
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           Built with{" "}
-          <Heart className="h-4 w-4 text-destructive fill-destructive" /> using{" "}
-          <a
-            href="https://caffeine.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline"
-          >
-            caffeine.ai
-          </a>
+          <Heart className="h-4 w-4 text-destructive fill-destructive" />
         </div>
       </div>
     </footer>
