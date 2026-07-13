@@ -120,8 +120,8 @@ export default function DownloadSuccess() {
           ? await downloadMac.mutateAsync(undefined)
           : await downloadWindows.mutateAsync(undefined);
 
-      const bytes = Uint8Array.from(downloaded.bytes);
-      const blob = new Blob([bytes], {
+      // Do not Uint8Array.from() — that doubles ~120 MiB and OOMs Chrome (Error 5).
+      const blob = new Blob([downloaded.bytes as BlobPart], {
         type: downloaded.mimeType,
       });
       const url = URL.createObjectURL(blob);

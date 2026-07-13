@@ -227,6 +227,16 @@ Recommended long-term: **CI publishes installers to CDN/R2 (or GitHub Release)**
 
 **Note on upload:** Same engineering cost; expected wall-clock gain is smaller than download because update consensus cannot fully parallelize. Still worth it for admin UX (pipelined RTTs + retries).
 
+### Phase A hotfix (2026-07-13) — Chrome Aw Snap / Error 5
+
+Parallel download briefly held **all chunks + full reassembly**, and `DownloadSuccess` did `Uint8Array.from(bytes)` (another full copy). Peak RAM ~3× installer size → tab kill on ~120 MiB DMG.
+
+Mitigations shipped:
+
+- Write each chunk **directly** into one `Uint8Array` (no `parts[]` double buffer)
+- Drop `Uint8Array.from` before `Blob`
+- Lower default concurrency **6 → 4**
+
 ### Phase B — Decision gate (pick one)
 
 Choose based on policy:

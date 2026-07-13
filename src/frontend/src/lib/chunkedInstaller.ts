@@ -6,8 +6,12 @@
 
 export const DEFAULT_INSTALLER_CHUNK_BYTES = 1_500_000;
 
-/** Concurrent workers for chunk transfer (DDR-041 Phase A). */
-export const DEFAULT_CHUNK_CONCURRENCY = 6;
+/**
+ * Concurrent workers for chunk transfer (DDR-041 Phase A).
+ * Keep modest: each in-flight IC query briefly holds ~1.5 MiB decoded bytes;
+ * higher values OOM Chrome on ~120 MiB installers (Aw Snap / error code 5).
+ */
+export const DEFAULT_CHUNK_CONCURRENCY = 4;
 
 const CHUNK_TRANSFER_MAX_ATTEMPTS = 3;
 
@@ -23,13 +27,12 @@ function resolveConcurrency(requested: number | undefined, total: number): numbe
   return Math.max(1, Math.min(n, total));
 }
 
-async function mapPool<T>(
+async function runPool(
   total: number,
   concurrency: number,
-  fn: (index: number) => Promise<T>,
+  fn: (index: number) => Promise<void>,
   onItemDone?: (completed: number) => void,
-): Promise<T[]> {
-  const results: T[] = new Array(total);
+): Promise<void> {
   let nextIndex = 0;
   let completed = 0;
 
@@ -37,7 +40,7 @@ async function mapPool<T>(
     while (true) {
       const i = nextIndex++;
       if (i >= total) return;
-      results[i] = await fn(i);
+      await fn(i);
       completed += 1;
       onItemDone?.(completed);
     }
@@ -46,7 +49,6 @@ async function mapPool<T>(
   await Promise.all(
     Array.from({ length: resolveConcurrency(concurrency, total) }, () => worker()),
   );
-  return results;
 }
 
 export type InstallerPlatform = "mac" | "windows";
@@ -219,7 +221,7 @@ export async function uploadInstallerChunked(
 
   try {
     // Backend stores chunks in a Map by index — order does not matter (DDR-005).
-    await mapPool(
+    await runPool(
       totalChunks,
       concurrency,
       async (i) => {
@@ -257,6 +259,7 @@ export async function uploadInstallerChunked(
 
 /**
  * Download installer with concurrent IC query workers (DDR-041 Phase A).
+ * Writes each chunk straight into one output buffer (no second full copy of parts).
  * Progress is completedChunks / chunkCount.
  */
 export async function downloadInstallerChunked(
@@ -285,28 +288,52 @@ export async function downloadInstallerChunked(
     throw new Error("Invalid installer metadata (totalSize)");
   }
 
+  let chunkSize = DEFAULT_INSTALLER_CHUNK_BYTES;
+  try {
+    const max = await actor.getInstallerChunkMaxBytes();
+    const n = Number(max);
+    if (Number.isFinite(n) && n > 0) chunkSize = n;
+  } catch {
+    // keep default
+  }
+
+  // Upload used fixed-size chunks except the last — offsets must match.
+  if (chunkCount > 1) {
+    const minExpected = (chunkCount - 1) * chunkSize + 1;
+    const maxExpected = chunkCount * chunkSize;
+    if (totalSize < minExpected || totalSize > maxExpected) {
+      throw new Error(
+        `Installer size ${totalSize} inconsistent with chunkCount=${chunkCount} chunkSize=${chunkSize}`,
+      );
+    }
+  }
+
+  const out = new Uint8Array(totalSize);
+  let written = 0;
   onProgress?.(1);
 
-  const parts = await mapPool(
+  await runPool(
     chunkCount,
     concurrency,
-    (i) => downloadChunkWithRetry(actor, platform, i, chunkCount),
+    async (i) => {
+      const chunk = await downloadChunkWithRetry(actor, platform, i, chunkCount);
+      const offset = i * chunkSize;
+      if (offset + chunk.byteLength > totalSize) {
+        throw new Error(
+          `Chunk ${i + 1}/${chunkCount} overflows buffer at offset ${offset}`,
+        );
+      }
+      out.set(chunk, offset);
+      written += chunk.byteLength;
+    },
     (completed) => {
       onProgress?.(Math.min(99, Math.round((completed / chunkCount) * 100)));
     },
   );
 
-  const out = new Uint8Array(totalSize);
-  let offset = 0;
-  for (let i = 0; i < chunkCount; i++) {
-    const chunk = parts[i];
-    out.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-
-  if (offset !== totalSize) {
+  if (written !== totalSize) {
     throw new Error(
-      `Downloaded size mismatch: got ${offset} bytes, expected ${totalSize}`,
+      `Downloaded size mismatch: got ${written} bytes, expected ${totalSize}`,
     );
   }
 
