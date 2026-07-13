@@ -17,7 +17,7 @@
 | [DDR-037](DDR-037-Free-Features-Marketing-Images.md) | Free Features admin images → homepage Learn More | Implemented | 2026-07-13 |
 | [DDR-038](DDR-038-Dfx-IC0503-Deploy-Decision-Tree.md) | IC0503: when frontend vs backend deploys succeed | Implemented (lock) | 2026-07-13 |
 | [DDR-039](DDR-039-Feature-Image-List-Query-Overflow.md) | Feature images blow list queries → false empty Admin | Implemented | 2026-07-13 |
-| [DDR-040](DDR-040-Feature-Image-Lightbox.md) | Free/Premium image lightbox + Premium View chip | Approved (design) | 2026-07-13 |
+| [DDR-040](DDR-040-Feature-Image-Lightbox.md) | Free/Premium image lightbox + Premium View chip | Implemented | 2026-07-13 |
 
 **Runbook:** [docs/dfx-deploy.md](../docs/dfx-deploy.md) · **CI identity:** [docs/dfx-ci-identity.md](../docs/dfx-ci-identity.md)
 

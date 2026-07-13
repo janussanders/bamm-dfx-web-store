@@ -30,9 +30,13 @@ import {
 import { motion } from "motion/react";
 import { useState } from "react";
 import DownloadForm from "../components/DownloadForm";
+import {
+  FeatureImageLightbox,
+  type FeatureLightboxState,
+} from "../components/FeatureImageLightbox";
+import { FeatureImagePreview } from "../components/FeatureImagePreview";
 import RegulatedFeatureDisclaimer from "../components/RegulatedFeatureDisclaimer";
-import { ExternalBlob } from "../backend";
-import { useGetCoreFeatures, useFeatureImage } from "../hooks/useQueries";
+import { useGetCoreFeatures } from "../hooks/useQueries";
 import {
   BASIC_BILLS_INTRO,
   BASIC_DASHBOARD_INTRO,
@@ -86,21 +90,8 @@ export default function LandingPage() {
   const [showDownloadForm, setShowDownloadForm] = useState(false);
   const [basicOpen, setBasicOpen] = useState(false);
   const [premiumOpen, setPremiumOpen] = useState(false);
+  const [lightbox, setLightbox] = useState<FeatureLightboxState>(null);
   const { data: coreFeatures } = useGetCoreFeatures();
-
-  // After DDR-039, list queries omit blobs — still try embedded then getFeatureImage.
-  const dashboardImage = useFeatureImage(
-    "dashboard",
-    coreFeatures?.find((f) => f.id === "dashboard")?.image,
-  );
-  const billFilesImage = useFeatureImage(
-    "bill_files",
-    coreFeatures?.find((f) => f.id === "bill_files")?.image,
-  );
-  const incomeTrackingImage = useFeatureImage(
-    "income_tracking",
-    coreFeatures?.find((f) => f.id === "income_tracking")?.image,
-  );
 
   const features = [
     {
@@ -342,17 +333,17 @@ export default function LandingPage() {
                     <p className="text-muted-foreground">
                       {BASIC_DASHBOARD_INTRO}
                     </p>
-                    {dashboardImage.data && (
-                      <div className="rounded-lg overflow-hidden bg-muted/30 border border-border/40">
-                        <img
-                          src={ExternalBlob.fromBytes(
-                            dashboardImage.data,
-                          ).getDirectURL()}
-                          alt="Dashboard preview"
-                          className="w-full h-auto object-cover"
-                        />
-                      </div>
-                    )}
+                    <FeatureImagePreview
+                      featureId="dashboard"
+                      embedded={
+                        coreFeatures?.find((f) => f.id === "dashboard")?.image
+                      }
+                      alt="Dashboard preview"
+                      enableLightbox
+                      hideWhenEmpty
+                      imgClassName="w-full h-auto object-contain max-h-80"
+                      onOpenLightbox={setLightbox}
+                    />
                     <ul className="space-y-3 ml-9">
                       <li className="flex gap-3">
                         <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -394,17 +385,17 @@ export default function LandingPage() {
                       <h3 className="text-xl font-bold">Bill Files</h3>
                     </div>
                     <p className="text-muted-foreground">{BASIC_BILLS_INTRO}</p>
-                    {billFilesImage.data && (
-                      <div className="rounded-lg overflow-hidden bg-muted/30 border border-border/40">
-                        <img
-                          src={ExternalBlob.fromBytes(
-                            billFilesImage.data,
-                          ).getDirectURL()}
-                          alt="Bill Files preview"
-                          className="w-full h-auto object-cover"
-                        />
-                      </div>
-                    )}
+                    <FeatureImagePreview
+                      featureId="bill_files"
+                      embedded={
+                        coreFeatures?.find((f) => f.id === "bill_files")?.image
+                      }
+                      alt="Bill Files preview"
+                      enableLightbox
+                      hideWhenEmpty
+                      imgClassName="w-full h-auto object-contain max-h-80"
+                      onOpenLightbox={setLightbox}
+                    />
                     <ul className="space-y-3 ml-9">
                       <li className="flex gap-3">
                         <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -460,17 +451,18 @@ export default function LandingPage() {
                     <p className="text-muted-foreground">
                       {BASIC_INCOME_TRACKING_INTRO}
                     </p>
-                    {incomeTrackingImage.data && (
-                      <div className="rounded-lg overflow-hidden bg-muted/30 border border-border/40">
-                        <img
-                          src={ExternalBlob.fromBytes(
-                            incomeTrackingImage.data,
-                          ).getDirectURL()}
-                          alt="Income and Bill Tracking preview"
-                          className="w-full h-auto object-cover"
-                        />
-                      </div>
-                    )}
+                    <FeatureImagePreview
+                      featureId="income_tracking"
+                      embedded={
+                        coreFeatures?.find((f) => f.id === "income_tracking")
+                          ?.image
+                      }
+                      alt="Income and Bill Tracking preview"
+                      enableLightbox
+                      hideWhenEmpty
+                      imgClassName="w-full h-auto object-contain max-h-80"
+                      onOpenLightbox={setLightbox}
+                    />
                     <ul className="space-y-3 ml-9">
                       <li className="flex gap-3">
                         <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -1153,6 +1145,13 @@ export default function LandingPage() {
       {showDownloadForm && (
         <DownloadForm onClose={() => setShowDownloadForm(false)} />
       )}
+
+      <FeatureImageLightbox
+        lightbox={lightbox}
+        onOpenChange={(open) => {
+          if (!open) setLightbox(null);
+        }}
+      />
     </div>
   );
 }

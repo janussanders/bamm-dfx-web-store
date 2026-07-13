@@ -1,7 +1,7 @@
 # DDR-040: Feature image lightbox (Free Learn More + Premium View)
 
 **Date:** 2026-07-13  
-**Status:** Approved (design) — implement after review  
+**Status:** Implemented  
 **Parent:** [DDR-037](DDR-037-Free-Features-Marketing-Images.md), [DDR-039](DDR-039-Feature-Image-List-Query-Overflow.md)  
 **Surfaces:** Homepage BAMM Basic Learn More; `/premium` Select Premium Features cards  
 **Out of scope:** Admin Features Management thumbnails; Motoko/backend; Stripe/RESEND/entitlement APIs

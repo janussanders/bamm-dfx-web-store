@@ -16,7 +16,11 @@ import { Link } from "@tanstack/react-router";
 import { Check, Loader2, Shield, Sparkles, Tag, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { FeatureImageThumb } from "../components/FeatureImageThumb";
+import {
+  FeatureImageLightbox,
+  type FeatureLightboxState,
+} from "../components/FeatureImageLightbox";
+import { FeatureImagePreview } from "../components/FeatureImagePreview";
 import RegulatedFeatureDisclaimer from "../components/RegulatedFeatureDisclaimer";
 import {
   BUNDLE_CATALOG,
@@ -93,6 +97,7 @@ export default function PremiumProducts() {
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<FeatureLightboxState>(null);
 
   const selectedBundle = useMemo(
     () =>
@@ -449,15 +454,17 @@ export default function PremiumProducts() {
                                   {cardDisclaimer}
                                 </p>
                               )}
-                              <div className="mt-4 rounded-lg overflow-hidden bg-muted/30 empty:hidden">
-                                <FeatureImageThumb
-                                  featureId={feature.id}
-                                  embedded={feature.image}
-                                  alt={feature.name}
-                                  className="w-full h-auto object-contain max-h-64"
-                                  hideWhenEmpty
-                                />
-                              </div>
+                              <FeatureImagePreview
+                                featureId={feature.id}
+                                embedded={feature.image}
+                                alt={feature.name}
+                                enableLightbox
+                                isolateClicks
+                                hideWhenEmpty
+                                className="mt-4"
+                                imgClassName="w-full h-auto object-contain max-h-80 min-h-[12rem]"
+                                onOpenLightbox={setLightbox}
+                              />
                             </div>
                             <div
                               className={`
@@ -705,6 +712,13 @@ export default function PremiumProducts() {
           </CardContent>
         </Card>
       </div>
+
+      <FeatureImageLightbox
+        lightbox={lightbox}
+        onOpenChange={(open) => {
+          if (!open) setLightbox(null);
+        }}
+      />
     </div>
   );
 }
