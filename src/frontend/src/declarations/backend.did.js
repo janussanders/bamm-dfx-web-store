@@ -393,6 +393,7 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getCoreFeatures' : IDL.Func([], [IDL.Vec(LicenseFeature)], ['query']),
+  'getFeatureImage' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Vec(IDL.Nat8))], ['query']),
   'getCustomerEntitlements' : IDL.Func(
       [IDL.Text],
       [IDL.Vec(EntitlementStatusView)],
@@ -1016,6 +1017,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getCoreFeatures' : IDL.Func([], [IDL.Vec(LicenseFeature)], ['query']),
+    'getFeatureImage' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Vec(IDL.Nat8))], ['query']),
     'getCustomerEntitlements' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(EntitlementStatusView)],

@@ -1,5 +1,4 @@
 import type { ShoppingItem } from "@/backend";
-import { ExternalBlob } from "@/backend";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +16,7 @@ import { Link } from "@tanstack/react-router";
 import { Check, Loader2, Shield, Sparkles, Tag, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { FeatureImageThumb } from "../components/FeatureImageThumb";
 import RegulatedFeatureDisclaimer from "../components/RegulatedFeatureDisclaimer";
 import {
   BUNDLE_CATALOG,
@@ -449,18 +449,15 @@ export default function PremiumProducts() {
                                   {cardDisclaimer}
                                 </p>
                               )}
-                              {feature.image && (
-                                <div className="mt-4 rounded-lg overflow-hidden bg-muted/30">
-                                  <img
-                                    src={ExternalBlob.fromBytes(
-                                      feature.image,
-                                    ).getDirectURL()}
-                                    alt={feature.name}
-                                    className="w-full h-auto object-contain"
-                                    loading="lazy"
-                                  />
-                                </div>
-                              )}
+                              <div className="mt-4 rounded-lg overflow-hidden bg-muted/30 empty:hidden">
+                                <FeatureImageThumb
+                                  featureId={feature.id}
+                                  embedded={feature.image}
+                                  alt={feature.name}
+                                  className="w-full h-auto object-contain max-h-64"
+                                  hideWhenEmpty
+                                />
+                              </div>
                             </div>
                             <div
                               className={`

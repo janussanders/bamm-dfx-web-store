@@ -144,6 +144,7 @@ import {
   useIsAdmin,
   useIsStripeConfigured,
   useMutationRegenerateSuperAdminClaimCode,
+  useRecoverFeatureListImages,
   useRemoveFeatureImage,
   useResendLicense,
   useSetResendConfiguration,
@@ -160,6 +161,8 @@ import {
   useUploadTrialLicenseFile,
   useUploadWindowsInstaller,
 } from "../hooks/useQueries";
+import { FeatureImageThumb } from "../components/FeatureImageThumb";
+import { compressFeatureImage } from "../lib/compressFeatureImage";
 
 // Role helper: converts backend AdminRole string to display string
 function roleToString(role: string | null | undefined): string {
@@ -393,7 +396,7 @@ export default function AdminPanel() {
   const uploadLicenseFile = useUploadTrialLicenseFile();
   const { data: licenseRecords } = useGetLicenseRecords();
   const deleteLicenseRecord = useDeleteLicenseRecord();
-  const { data: licenseFeatures } = useGetLicenseFeatures();
+  const { data: licenseFeatures, isError: licenseFeaturesError, isLoading: licenseFeaturesLoading, refetch: refetchLicenseFeatures } = useGetLicenseFeatures();
   const addLicenseFeature = useAddLicenseFeature();
   const updateLicenseFeature = useUpdateLicenseFeature();
   const deleteLicenseFeature = useDeleteLicenseFeature();
@@ -414,6 +417,7 @@ export default function AdminPanel() {
   const uploadWindowsInstaller = useUploadWindowsInstaller();
   const uploadFeatureImage = useUploadFeatureImage();
   const removeFeatureImage = useRemoveFeatureImage();
+  const recoverFeatureListImages = useRecoverFeatureListImages();
 
   const macFileInputRef = useRef<HTMLInputElement>(null);
   const windowsFileInputRef = useRef<HTMLInputElement>(null);
@@ -432,8 +436,6 @@ export default function AdminPanel() {
   const [editingPurchaseFeatures, setEditingPurchaseFeatures] = useState<
     string[]
   >([]);
-  const [featuresInitialized, setFeaturesInitialized] = useState(false);
-
   // Deletion confirmation states
   const [deleteSubmissionEmail, setDeleteSubmissionEmail] = useState<
     string | null
@@ -546,18 +548,6 @@ export default function AdminPanel() {
     }
   }, [resendConfig]);
 
-  // Initialize default premium features if none exist
-  useEffect(() => {
-    if (
-      isAdmin &&
-      licenseFeatures &&
-      licenseFeatures.length === 0 &&
-      !featuresInitialized
-    ) {
-      handleInitializeFeatures();
-    }
-  }, [isAdmin, licenseFeatures, featuresInitialized]);
-
   const { data: pendingInvite } = useCheckAnyPendingInvite();
 
   // Redirect non-admin users to access denied page
@@ -582,12 +572,21 @@ export default function AdminPanel() {
 
   const handleInitializeFeatures = async () => {
     try {
-      await initializeFeatures.mutateAsync();
-      setFeaturesInitialized(true);
-      toast.success("Default premium features initialized successfully");
+      const result = await initializeFeatures.mutateAsync();
+      if (result.created === 0) {
+        toast.success("Premium features already present");
+      } else {
+        toast.success(
+          `Initialized ${result.created} premium feature${result.created === 1 ? "" : "s"}`,
+        );
+      }
     } catch (error) {
       console.error("Feature initialization error:", error);
-      toast.error("Failed to initialize features");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to initialize features",
+      );
     }
   };
 
@@ -603,7 +602,24 @@ export default function AdminPanel() {
       }
     } catch (error) {
       console.error("Core feature initialization error:", error);
-      toast.error("Failed to initialize free features");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to initialize free features",
+      );
+    }
+  };
+
+  const handleRecoverFeatureList = async () => {
+    try {
+      const result = await recoverFeatureListImages.mutateAsync();
+      await refetchLicenseFeatures();
+      toast.success(
+        `Cleared ${result.removed} feature image slot(s). Re-upload compressed screenshots.`,
+      );
+    } catch (error) {
+      console.error("Feature list recovery error:", error);
+      toast.error("Failed to recover feature list");
     }
   };
 
@@ -887,12 +903,12 @@ export default function AdminPanel() {
       setUploadingImageFor(featureId);
       setImageUploadProgress(0);
 
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
+      const compressed = await compressFeatureImage(file);
+      setImageUploadProgress(30);
 
-      const blob = ExternalBlob.fromBytes(uint8Array).withUploadProgress(
+      const blob = ExternalBlob.fromBytes(compressed).withUploadProgress(
         (percentage) => {
-          setImageUploadProgress(percentage);
+          setImageUploadProgress(30 + Math.round(percentage * 0.7));
         },
       );
 
@@ -901,7 +917,9 @@ export default function AdminPanel() {
       setImageUploadProgress(0);
     } catch (error) {
       console.error("Feature image upload error:", error);
-      toast.error("Failed to upload feature image");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to upload feature image",
+      );
     } finally {
       setUploadingImageFor(null);
       e.target.value = "";
@@ -2120,7 +2138,9 @@ export default function AdminPanel() {
                       <Button
                         variant="outline"
                         onClick={handleInitializeFeatures}
-                        disabled={initializeFeatures.isPending}
+                        disabled={
+                          initializeFeatures.isPending || licenseFeaturesError
+                        }
                       >
                         {initializeFeatures.isPending ? (
                           <>
@@ -2312,6 +2332,44 @@ export default function AdminPanel() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-10">
+                {licenseFeaturesError && (
+                  <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 space-y-3">
+                    <p className="text-sm font-medium text-destructive">
+                      Feature list failed to load. This usually means marketing images
+                      exceeded the IC ~3&nbsp;MiB query limit — rows are likely still
+                      stored on the canister (DDR-039).
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Do not re-initialize yet. Clear images to reload the list, then
+                      re-upload compressed screenshots.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleRecoverFeatureList}
+                        disabled={recoverFeatureListImages.isPending}
+                      >
+                        {recoverFeatureListImages.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Recovering...
+                          </>
+                        ) : (
+                          "Recover list (clear feature images)"
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => refetchLicenseFeatures()}
+                        disabled={licenseFeaturesLoading}
+                      >
+                        Retry load
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-4">
                     <div>
@@ -2321,7 +2379,7 @@ export default function AdminPanel() {
                       </p>
                     </div>
                   </div>
-                {premiumFeaturesList.length > 0 ? (
+                {licenseFeaturesError ? null : premiumFeaturesList.length > 0 ? (
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -2341,17 +2399,11 @@ export default function AdminPanel() {
                         <TableRow key={feature.id}>
                           <TableCell>
                             <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
-                              {feature.image ? (
-                                <img
-                                  src={ExternalBlob.fromBytes(
-                                    feature.image,
-                                  ).getDirectURL()}
-                                  alt={feature.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                              )}
+                              <FeatureImageThumb
+                                featureId={feature.id}
+                                embedded={feature.image}
+                                alt={feature.name}
+                              />
                             </div>
                           </TableCell>
                           <TableCell className="font-mono text-xs">
@@ -2415,11 +2467,7 @@ export default function AdminPanel() {
                                       ?.click()
                                   }
                                   disabled={uploadingImageFor === feature.id}
-                                  title={
-                                    feature.image
-                                      ? "Replace image"
-                                      : "Upload image"
-                                  }
+                                  title="Upload or replace image"
                                 >
                                   {uploadingImageFor === feature.id ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -2428,8 +2476,7 @@ export default function AdminPanel() {
                                   )}
                                 </Button>
                               </div>
-                              {feature.image && (
-                                <Button
+                              <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() =>
@@ -2440,7 +2487,6 @@ export default function AdminPanel() {
                                 >
                                   <X className="h-4 w-4 text-destructive" />
                                 </Button>
-                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -2508,7 +2554,7 @@ export default function AdminPanel() {
                       )}
                     </Button>
                   </div>
-                  {freeFeaturesList.length > 0 ? (
+                  {licenseFeaturesError ? null : freeFeaturesList.length > 0 ? (
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -2525,17 +2571,11 @@ export default function AdminPanel() {
                           <TableRow key={feature.id}>
                             <TableCell>
                               <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
-                                {feature.image ? (
-                                  <img
-                                    src={ExternalBlob.fromBytes(
-                                      feature.image,
-                                    ).getDirectURL()}
-                                    alt={feature.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                )}
+                                <FeatureImageThumb
+                                  featureId={feature.id}
+                                  embedded={feature.image}
+                                  alt={feature.name}
+                                />
                               </div>
                             </TableCell>
                             <TableCell className="font-mono text-xs">
@@ -2586,11 +2626,7 @@ export default function AdminPanel() {
                                         ?.click()
                                     }
                                     disabled={uploadingImageFor === feature.id}
-                                    title={
-                                      feature.image
-                                        ? "Replace image"
-                                        : "Upload image"
-                                    }
+                                    title="Upload or replace image"
                                   >
                                     {uploadingImageFor === feature.id ? (
                                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -2599,19 +2635,17 @@ export default function AdminPanel() {
                                     )}
                                   </Button>
                                 </div>
-                                {feature.image && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleRemoveFeatureImage(feature.id)
-                                    }
-                                    disabled={removeFeatureImage.isPending}
-                                    title="Remove image"
-                                  >
-                                    <X className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleRemoveFeatureImage(feature.id)
+                                  }
+                                  disabled={removeFeatureImage.isPending}
+                                  title="Remove image"
+                                >
+                                  <X className="h-4 w-4 text-destructive" />
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"

@@ -440,6 +440,8 @@ export interface backendInterface {
         resendConfigured: boolean;
     }>;
     getCoreFeatures(): Promise<Array<LicenseFeature>>;
+    /** DDR-039 — single feature marketing image (list queries omit blobs). */
+    getFeatureImage(featureId: string): Promise<Uint8Array | null>;
     getCustomerEntitlements(customerEmail: string): Promise<Array<EntitlementStatusView>>;
     getEmailAutomationSettings(): Promise<EmailAutomationSettings>;
     getEmailLogs(): Promise<Array<EmailLog>>;
@@ -1382,6 +1384,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getCoreFeatures();
             return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getFeatureImage(arg0: string): Promise<Uint8Array | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getFeatureImage(arg0);
+                return from_candid_opt_n27(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getFeatureImage(arg0);
+            return from_candid_opt_n27(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCustomerEntitlements(arg0: string): Promise<Array<EntitlementStatusView>> {

@@ -393,6 +393,7 @@ export interface backendInterface {
         resendConfigured: boolean;
     }>;
     getCoreFeatures(): Promise<Array<LicenseFeature>>;
+    getFeatureImage(featureId: string): Promise<Uint8Array | null>;
     getCustomerEntitlements(customerEmail: string): Promise<Array<EntitlementStatusView>>;
     getEmailAutomationSettings(): Promise<EmailAutomationSettings>;
     getEmailLogs(): Promise<Array<EmailLog>>;

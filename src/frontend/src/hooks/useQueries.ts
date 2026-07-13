@@ -679,16 +679,43 @@ export function useDownloadWindowsInstaller() {
 }
 
 // License features - fetches all license features from Features Management tab
+// DDR-039: list payloads omit image blobs once Motoko strip ships; do not treat
+// query failure as empty (that falsely triggers re-init UI).
 export function useGetLicenseFeatures() {
   const { actor, isFetching } = useActor();
 
   return useQuery<LicenseFeature[]>({
     queryKey: ["licenseFeatures"],
     queryFn: async () => {
-      if (!actor) return [];
+      if (!actor) throw new Error("Actor not available");
       return actor.getLicenseFeatures();
     },
     enabled: !!actor && !isFetching,
+    retry: 1,
+  });
+}
+
+/** On-demand feature marketing image (DDR-039). */
+export function useFeatureImage(
+  featureId: string | undefined,
+  embedded?: Uint8Array,
+) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<Uint8Array | null>({
+    queryKey: ["featureImage", featureId],
+    queryFn: async () => {
+      if (embedded && embedded.byteLength > 0) return embedded;
+      if (!actor || !featureId) return null;
+      try {
+        return await actor.getFeatureImage(featureId);
+      } catch {
+        // Method missing until backend upgrade, or no image stored.
+        return embedded && embedded.byteLength > 0 ? embedded : null;
+      }
+    },
+    enabled: !!featureId && ((!isFetching && !!actor) || !!(embedded && embedded.byteLength > 0)),
+    staleTime: 60_000,
   });
 }
 
@@ -816,21 +843,60 @@ export function useUpdateFeatureStatus() {
   });
 }
 
-export function useInitializeDefaultPremiumFeatures() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error("Actor not available");
-      return actor.initializeDefaultPremiumFeatures();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["licenseFeatures"] });
-      queryClient.invalidateQueries({ queryKey: ["premiumFeatures"] });
-    },
-  });
-}
+const DEFAULT_PREMIUM_FEATURES: LicenseFeature[] = [
+  {
+    id: "paycheck_budget",
+    name: "Paycheck Budget",
+    description: "Advanced paycheck budgeting tools for financial planning.",
+    isPremium: true,
+    isActive: true,
+    priceInCents: 1999n,
+    featureType: "Premium",
+    licenseReferenceName: "Paycheck Budget",
+  },
+  {
+    id: "goals",
+    name: "Goals",
+    description: "Set and track financial goals with progress monitoring.",
+    isPremium: true,
+    isActive: true,
+    priceInCents: 1499n,
+    featureType: "Premium",
+    licenseReferenceName: "Goals",
+  },
+  {
+    id: "tx_simulator",
+    name: "Tx Simulator",
+    description:
+      "Estimate tax scenarios for planning—not filing advice. Consult a qualified professional before acting.",
+    isPremium: true,
+    isActive: true,
+    priceInCents: 1299n,
+    featureType: "Premium",
+    licenseReferenceName: "Tx Simulator",
+  },
+  {
+    id: "migration-management",
+    name: "Database Management",
+    description: "Export, backup, and maintain your local financial data.",
+    isPremium: true,
+    isActive: true,
+    priceInCents: 2499n,
+    featureType: "Premium",
+    licenseReferenceName: "Database Management",
+  },
+  {
+    id: "trades",
+    name: "Trades",
+    description:
+      "Scan, backtest, and trade with risk controls you define. Strategy tools only—not investment advice.",
+    isPremium: true,
+    isActive: true,
+    priceInCents: 4999n,
+    featureType: "Premium",
+    licenseReferenceName: "Trades",
+  },
+];
 
 /** Homepage Learn More categories — seeded via addLicenseFeature when Motoko helper is absent (DDR-038). */
 const DEFAULT_CORE_FEATURES: LicenseFeature[] = [
@@ -879,6 +945,46 @@ function isMissingCanisterMethodError(error: unknown, method: string): boolean {
   );
 }
 
+/** Ids used for DDR-039 list-recovery (remove oversized images without a list query). */
+export const KNOWN_FEATURE_IMAGE_IDS = [
+  ...DEFAULT_PREMIUM_FEATURES.map((f) => f.id),
+  ...DEFAULT_CORE_FEATURES.map((f) => f.id),
+] as const;
+
+export function useInitializeDefaultPremiumFeatures() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error("Actor not available");
+
+      // Always idempotent client seed. Never call Motoko initializeDefaultPremiumFeatures
+      // on older wasm that overwrote rows with image=null (DDR-039).
+      let existing: LicenseFeature[];
+      try {
+        existing = await actor.getLicenseFeatures();
+      } catch {
+        throw new Error(
+          "Feature list query failed (likely oversized images). Use Recover list before Initialize.",
+        );
+      }
+      const existingIds = new Set(existing.map((f) => f.id));
+      let created = 0;
+      for (const feature of DEFAULT_PREMIUM_FEATURES) {
+        if (existingIds.has(feature.id)) continue;
+        await actor.addLicenseFeature(feature);
+        created += 1;
+      }
+      return { mode: "client" as const, created };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["licenseFeatures"] });
+      queryClient.invalidateQueries({ queryKey: ["premiumFeatures"] });
+    },
+  });
+}
+
 export function useInitializeDefaultCoreFeatures() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -899,7 +1005,14 @@ export function useInitializeDefaultCoreFeatures() {
 
       // Live backend may lack the helper until Motoko upgrade succeeds (DDR-038).
       // Seed with the existing addLicenseFeature API (idempotent: skip known ids).
-      const existing = await actor.getLicenseFeatures();
+      let existing: LicenseFeature[];
+      try {
+        existing = await actor.getLicenseFeatures();
+      } catch {
+        throw new Error(
+          "Feature list query failed (likely oversized images). Use Recover list before Initialize.",
+        );
+      }
       const existingIds = new Set(existing.map((f) => f.id));
       let created = 0;
       for (const feature of DEFAULT_CORE_FEATURES) {
@@ -1040,10 +1153,11 @@ export function useUploadFeatureImage() {
       if (!actor) throw new Error("Actor not available");
       return actor.uploadFeatureImage(featureId, await image.getBytes());
     },
-    onSuccess: () => {
+    onSuccess: (_data, { featureId }) => {
       queryClient.invalidateQueries({ queryKey: ["licenseFeatures"] });
       queryClient.invalidateQueries({ queryKey: ["premiumFeatures"] });
       queryClient.invalidateQueries({ queryKey: ["coreFeatures"] });
+      queryClient.invalidateQueries({ queryKey: ["featureImage", featureId] });
     },
   });
 }
@@ -1057,10 +1171,42 @@ export function useRemoveFeatureImage() {
       if (!actor) throw new Error("Actor not available");
       return actor.removeFeatureImage(featureId);
     },
+    onSuccess: (_data, featureId) => {
+      queryClient.invalidateQueries({ queryKey: ["licenseFeatures"] });
+      queryClient.invalidateQueries({ queryKey: ["premiumFeatures"] });
+      queryClient.invalidateQueries({ queryKey: ["coreFeatures"] });
+      queryClient.invalidateQueries({ queryKey: ["featureImage", featureId] });
+    },
+  });
+}
+
+/**
+ * DDR-039 recovery: strip known feature images so getLicenseFeatures fits under
+ * the IC ~3 MiB query limit. Does not delete feature rows.
+ */
+export function useRecoverFeatureListImages() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error("Actor not available");
+      let removed = 0;
+      for (const featureId of KNOWN_FEATURE_IMAGE_IDS) {
+        try {
+          await actor.removeFeatureImage(featureId);
+          removed += 1;
+        } catch {
+          // Feature missing or no image — ignore
+        }
+      }
+      return { removed };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["licenseFeatures"] });
       queryClient.invalidateQueries({ queryKey: ["premiumFeatures"] });
       queryClient.invalidateQueries({ queryKey: ["coreFeatures"] });
+      queryClient.invalidateQueries({ queryKey: ["featureImage"] });
     },
   });
 }

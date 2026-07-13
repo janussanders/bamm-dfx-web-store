@@ -1769,9 +1769,20 @@ actor BAMM {
     licenseFeatures.remove(featureId);
   };
 
-  // Public query - license features must be viewable on landing page for product information
+  // Public query - license features must be viewable on landing page for product information.
+  // DDR-039: strip image blobs from list responses (IC query ~3 MiB limit). Use getFeatureImage.
   public query func getLicenseFeatures() : async [LicenseFeature] {
-    licenseFeatures.values().toArray();
+    licenseFeatures.values().toArray().map(
+      func(feature : LicenseFeature) : LicenseFeature { { feature with image = null } },
+    );
+  };
+
+  // Single-feature image fetch — keeps list queries under the IC response size limit (DDR-039).
+  public query func getFeatureImage(featureId : Text) : async ?Blob {
+    switch (licenseFeatures.get(featureId)) {
+      case null { null };
+      case (?feature) { feature.image };
+    };
   };
 
   // License records management
@@ -2468,22 +2479,28 @@ actor BAMM {
     };
   };
 
-  // Public query - active features must be viewable on landing page for product information
+  // Public query - active features (images stripped — DDR-039)
   public query func getActiveFeatures() : async [LicenseFeature] {
     let allFeatures = licenseFeatures.values().toArray();
-    allFeatures.filter(func(feature : LicenseFeature) : Bool { feature.isActive });
+    allFeatures
+      .filter(func(feature : LicenseFeature) : Bool { feature.isActive })
+      .map(func(feature : LicenseFeature) : LicenseFeature { { feature with image = null } });
   };
 
-  // Public query - premium features must be viewable on landing page for product information
+  // Public query - premium features (images stripped — DDR-039)
   public query func getPremiumFeatures() : async [LicenseFeature] {
     let allFeatures = licenseFeatures.values().toArray();
-    allFeatures.filter(func(feature : LicenseFeature) : Bool { feature.isPremium and feature.isActive });
+    allFeatures
+      .filter(func(feature : LicenseFeature) : Bool { feature.isPremium and feature.isActive })
+      .map(func(feature : LicenseFeature) : LicenseFeature { { feature with image = null } });
   };
 
-  // Public query - core features must be viewable on landing page for product information
+  // Public query - core features (images stripped — DDR-039; use getFeatureImage for Learn More)
   public query func getCoreFeatures() : async [LicenseFeature] {
     let allFeatures = licenseFeatures.values().toArray();
-    allFeatures.filter(func(feature : LicenseFeature) : Bool { not feature.isPremium and feature.isActive });
+    allFeatures
+      .filter(func(feature : LicenseFeature) : Bool { not feature.isPremium and feature.isActive })
+      .map(func(feature : LicenseFeature) : LicenseFeature { { feature with image = null } });
   };
 
   // Initialize default premium features
@@ -2551,7 +2568,11 @@ actor BAMM {
     ];
 
     for (feature in defaultFeatures.values()) {
-      licenseFeatures.add(feature.id, feature);
+      // Idempotent: never overwrite existing rows (preserves uploaded images) — DDR-039
+      switch (licenseFeatures.get(feature.id)) {
+        case (?_) {};
+        case null { licenseFeatures.add(feature.id, feature) };
+      };
     };
   };
 

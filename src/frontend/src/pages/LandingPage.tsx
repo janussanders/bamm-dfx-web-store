@@ -28,11 +28,11 @@ import {
   Users,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import DownloadForm from "../components/DownloadForm";
 import RegulatedFeatureDisclaimer from "../components/RegulatedFeatureDisclaimer";
 import { ExternalBlob } from "../backend";
-import { useGetCoreFeatures } from "../hooks/useQueries";
+import { useGetCoreFeatures, useFeatureImage } from "../hooks/useQueries";
 import {
   BASIC_BILLS_INTRO,
   BASIC_DASHBOARD_INTRO,
@@ -88,15 +88,19 @@ export default function LandingPage() {
   const [premiumOpen, setPremiumOpen] = useState(false);
   const { data: coreFeatures } = useGetCoreFeatures();
 
-  const coreImageById = useMemo(() => {
-    const map = new Map<string, Uint8Array>();
-    for (const feature of coreFeatures ?? []) {
-      if (feature.image) {
-        map.set(feature.id, feature.image);
-      }
-    }
-    return map;
-  }, [coreFeatures]);
+  // After DDR-039, list queries omit blobs — still try embedded then getFeatureImage.
+  const dashboardImage = useFeatureImage(
+    "dashboard",
+    coreFeatures?.find((f) => f.id === "dashboard")?.image,
+  );
+  const billFilesImage = useFeatureImage(
+    "bill_files",
+    coreFeatures?.find((f) => f.id === "bill_files")?.image,
+  );
+  const incomeTrackingImage = useFeatureImage(
+    "income_tracking",
+    coreFeatures?.find((f) => f.id === "income_tracking")?.image,
+  );
 
   const features = [
     {
@@ -338,11 +342,11 @@ export default function LandingPage() {
                     <p className="text-muted-foreground">
                       {BASIC_DASHBOARD_INTRO}
                     </p>
-                    {coreImageById.get("dashboard") && (
+                    {dashboardImage.data && (
                       <div className="rounded-lg overflow-hidden bg-muted/30 border border-border/40">
                         <img
                           src={ExternalBlob.fromBytes(
-                            coreImageById.get("dashboard")!,
+                            dashboardImage.data,
                           ).getDirectURL()}
                           alt="Dashboard preview"
                           className="w-full h-auto object-cover"
@@ -390,11 +394,11 @@ export default function LandingPage() {
                       <h3 className="text-xl font-bold">Bill Files</h3>
                     </div>
                     <p className="text-muted-foreground">{BASIC_BILLS_INTRO}</p>
-                    {coreImageById.get("bill_files") && (
+                    {billFilesImage.data && (
                       <div className="rounded-lg overflow-hidden bg-muted/30 border border-border/40">
                         <img
                           src={ExternalBlob.fromBytes(
-                            coreImageById.get("bill_files")!,
+                            billFilesImage.data,
                           ).getDirectURL()}
                           alt="Bill Files preview"
                           className="w-full h-auto object-cover"
@@ -456,11 +460,11 @@ export default function LandingPage() {
                     <p className="text-muted-foreground">
                       {BASIC_INCOME_TRACKING_INTRO}
                     </p>
-                    {coreImageById.get("income_tracking") && (
+                    {incomeTrackingImage.data && (
                       <div className="rounded-lg overflow-hidden bg-muted/30 border border-border/40">
                         <img
                           src={ExternalBlob.fromBytes(
-                            coreImageById.get("income_tracking")!,
+                            incomeTrackingImage.data,
                           ).getDirectURL()}
                           alt="Income and Bill Tracking preview"
                           className="w-full h-auto object-cover"

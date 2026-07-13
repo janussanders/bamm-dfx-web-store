@@ -351,6 +351,7 @@ export interface _SERVICE {
     }
   >,
   'getCoreFeatures' : ActorMethod<[], Array<LicenseFeature>>,
+  'getFeatureImage' : ActorMethod<[string], [] | [Uint8Array | number[]]>,
   'getCustomerEntitlements' : ActorMethod<
     [string],
     Array<EntitlementStatusView>
