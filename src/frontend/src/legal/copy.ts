@@ -12,7 +12,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
   {
     heading: "1. Agreement",
     paragraphs: [
-      `These Terms of Service ("Terms") govern your use of the ${PRODUCT_NAME} storefront at bamm-gw3.caffeine.xyz and related download, checkout, and license delivery services operated by ${LEGAL_ENTITY} ("BAMM", "we", "us", "our").`,
+      `These Terms of Service ("Terms") govern your use of the ${PRODUCT_NAME} storefront at store.bammservice.com and related download, checkout, and license delivery services operated by ${LEGAL_ENTITY} ("BAMM", "we", "us", "our").`,
       "By downloading software, requesting a trial license, or completing a purchase, you agree to these Terms, our Privacy Policy, and our Refund Policy.",
     ],
   },

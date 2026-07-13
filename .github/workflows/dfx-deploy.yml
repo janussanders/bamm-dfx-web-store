@@ -129,7 +129,9 @@ jobs:
               "backend_host": "https://icp-api.io",
               "backend_canister_id": os.environ["BACKEND_ID"],
               "project_id": "bamm-dfx-web-store",
-              "ii_derivation_origin": f"https://{os.environ['FRONTEND_ID']}.icp0.io",
+              # Brand domain is II primary (DDR-009 Step 4). .icp0.io is listed in
+              # /.well-known/ii-alternative-origins so both hosts share principals.
+              "ii_derivation_origin": "https://store.bammservice.com",
               "storage_gateway_url": "undefined",
           }
           path = Path("src/frontend/env.json")
@@ -142,7 +144,9 @@ jobs:
             echo "- **Network:** $DFX_NETWORK"
             echo "- **Backend:** \`$BACKEND_ID\`"
             echo "- **Frontend:** \`$FRONTEND_ID\`"
+            echo "- **Storefront:** https://store.bammservice.com"
             echo "- **Agentic URL:** https://$FRONTEND_ID.icp0.io"
+            echo "- **II derivation origin:** https://store.bammservice.com"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build-only summary

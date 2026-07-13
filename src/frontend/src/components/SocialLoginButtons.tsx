@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { loadConfig } from "@caffeineai/core-infrastructure";
 import { AuthClient } from "@dfinity/auth-client";
 import { useCallback, useState } from "react";
 import { FaApple, FaGoogle, FaMicrosoft } from "react-icons/fa";
@@ -56,11 +57,17 @@ export function SocialLoginButtons({
         // Build the II URL with the provider deep-link hash fragment.
         // II mainnet supports: https://identity.ic0.app/#authorize?provider=<name>
         const providerUrl = `${II_URL}/#authorize?provider=${provider}`;
+        const config = await loadConfig();
 
-        const client = await AuthClient.create();
+        const client = await AuthClient.create({
+          loginOptions: {
+            derivationOrigin: config.ii_derivation_origin,
+          },
+        });
         await new Promise<void>((resolve, reject) => {
           client.login({
             identityProvider: providerUrl,
+            derivationOrigin: config.ii_derivation_origin,
             onSuccess: () => {
               resolve();
               onSuccess?.();

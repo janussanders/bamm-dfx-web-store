@@ -7,6 +7,15 @@
     "ignore": false
   },
   {
+    "match": ".well-known/ii-alternative-origins",
+    "ignore": false,
+    "headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Content-Type": "application/json",
+      "Cache-Control": "public, max-age=0"
+    }
+  },
+  {
     "match": ".well-known/**/*",
     "ignore": false,
     "headers": {

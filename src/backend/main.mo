@@ -606,7 +606,7 @@ actor BAMM {
       "ACTIVATE YOUR ADMIN ACCOUNT\n" #
       "--------------------\n\n" #
       "Click here to activate your account:\n" #
-      "https://bamm-gw3.caffeine.xyz/admin/accept-invite\n\n" #
+      "https://store.bammservice.com/admin/accept-invite\n\n" #
       "Your invite email: " # email # "\n" #
       "Your temporary password: " # tempPw # "\n\n" #
       "INSTRUCTIONS:\n" #
@@ -886,7 +886,7 @@ actor BAMM {
           "ACTIVATE YOUR ELEVATED ROLE\n" #
           "--------------------\n\n" #
           "Click here to activate your elevated role:\n" #
-          "https://bamm-gw3.caffeine.xyz/admin/accept-invite\n\n" #
+          "https://store.bammservice.com/admin/accept-invite\n\n" #
           "Your admin email: " # record.email # "\n" #
           "Your temporary password: " # tempPw # "\n\n" #
           "INSTRUCTIONS:\n" #

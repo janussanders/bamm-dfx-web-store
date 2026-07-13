@@ -1,16 +1,16 @@
 # DDR-009: Custom domain `store.bammservice.com` → dfx frontend
 
 **Date:** 2026-07-12  
-**Status:** In progress — DNS + IC registration **done**; II/env cutover still pending  
+**Status:** Implemented (engineering) — Steps 1–4 shipped 2026-07-13; Step 5 operator verify II + Stripe  
 **Parent:** [DDR-008](DDR-008-Dfx-Primary-Caffeine-Backup.md)  
 **Frontend canister:** `5xyyv-paaaa-aaaao-bbebq-cai`  
-**Current URL:** https://5xyyv-paaaa-aaaao-bbebq-cai.icp0.io  
+**Backend canister:** `5z2v5-uqaaa-aaaao-bbeaq-cai`  
 **Custom domain (live):** https://store.bammservice.com  
 **Docs:** [ICP custom domains](https://docs.internetcomputer.org/guides/frontends/custom-domains/)
 
 ## Context
 
-Squarespace currently lists **`bammservice.com` as Primary / Connected** (Settings → Domains & Email → Domains), with **Use “www” prefix = On**. That means Squarespace continues to serve marketing on `www` / apex. The IC storefront uses a **subdomain** so DNS can be added without disconnecting Squarespace.
+Squarespace lists **`bammservice.com` as Primary / Connected**, with **Use “www” prefix = On**. Marketing stays on `www` / apex. The IC storefront uses subdomain **`store`** so DNS can be added without disconnecting Squarespace.
 
 ## Decision
 
@@ -18,47 +18,36 @@ Squarespace currently lists **`bammservice.com` as Primary / Connected** (Settin
 
 | Option | Hostname | Squarespace | Status |
 |--------|----------|-------------|--------|
-| **A (chosen)** | `store.bammservice.com` | Keep marketing on Squarespace | **Registered** (HTTPS live 2026-07-13) |
+| **A (chosen)** | `store.bammservice.com` | Keep marketing on Squarespace | **Live** (HTTPS + II derivation 2026-07-13) |
 | B (deferred) | `www.bammservice.com` (+ apex) | Must stop Squarespace answering www/apex | Not selected |
 
-Desktop canister IDs for **entitlement activation** use the opaque frontend/backend canister path (BAMM DDR 2026-07-13); **II derivation origin** must still wait until TLS for `store.bammservice.com` is live (done 2026-07-13) and Step 4 is executed.
+Desktop entitlement activation uses opaque canister URLs (BAMM DDR 2026-07-13), not this brand host.
 
 ---
 
 ## Prerequisites
 
 1. Dfx frontend healthy: https://5xyyv-paaaa-aaaao-bbebq-cai.icp0.io  
-2. Operator can add DNS records under `bammservice.com` in Squarespace (Domains → DNS) without removing the primary connection.  
+2. Operator can add DNS under `bammservice.com` without removing the primary connection.  
 3. Repo serves `/.well-known/ic-domains` from the assets canister.  
-4. After TLS is **Available**, update CI / `env.json`:
-
-   - `ii_derivation_origin` → `https://store.bammservice.com`  
-   - Redeploy frontend  
-   - Add II alternative origins if login breaks (see § II)
+4. After TLS is registered, set `ii_derivation_origin` + alternative origins (Step 4).
 
 ---
 
 ## Step 1 — Add `.well-known/ic-domains` (code + deploy)
 
-Files in repo (Vite `publicDir` → `src/frontend/dist`):
+**Done.** Files under `frontend/public/` (Vite `publicDir`):
 
-- `frontend/public/.well-known/ic-domains` → contents: `store.bammservice.com`
-- `frontend/public/.ic-assets.json5` → ensure `.well-known` is **not** ignored
+- `.well-known/ic-domains` → `store.bammservice.com`
+- `.ic-assets.json5` → `.well-known` not ignored
 
-Redeploy frontend, then verify:
-
-```bash
-curl -sL "https://5xyyv-paaaa-aaaao-bbebq-cai.icp0.io/.well-known/ic-domains"
-# expect: store.bammservice.com
-```
+Verify: `curl -sL https://5xyyv-….icp0.io/.well-known/ic-domains`
 
 ---
 
 ## Step 2 — DNS records (Squarespace)
 
-Canister ID = **`5xyyv-paaaa-aaaao-bbebq-cai`**.
-
-In Squarespace → **Settings → Domains → bammservice.com → DNS Settings** (or “Advanced settings”), add:
+**Done 2026-07-13.** Canister ID = **`5xyyv-paaaa-aaaao-bbebq-cai`**.
 
 | Type | Host | Value |
 |------|------|--------|
@@ -66,58 +55,48 @@ In Squarespace → **Settings → Domains → bammservice.com → DNS Settings**
 | `TXT` | `_canister-id.store` | `5xyyv-paaaa-aaaao-bbebq-cai` |
 | `CNAME` | `_acme-challenge.store` | `_acme-challenge.store.bammservice.com.icp2.io` |
 
-Do **not** change `www` or apex records (Squarespace marketing stays).
-
-### Verify DNS
-
-```bash
-dig +short CNAME store.bammservice.com
-dig +short TXT _canister-id.store.bammservice.com
-dig +short CNAME _acme-challenge.store.bammservice.com
-```
-
-Exactly **one** TXT on `_canister-id.store…`.
+Do **not** change `www` or apex (Squarespace marketing stays). Domain Lock (transfer lock) does not block DNS edits.
 
 ---
 
 ## Step 3 — Register with IC HTTP gateways
 
-**Do not use** the deprecated `https://icp0.io/registrations` API (returns `canister_id_not_resolved`). Use the current registrar on `icp.net`:
+**Done 2026-07-13.** Use `icp.net` (not deprecated `icp0.io/registrations`):
 
 ```bash
-# Optional preflight
 curl -sL "https://icp.net/custom-domains/v1/store.bammservice.com/validate"
-
-# Register
 curl -sL -X POST "https://icp.net/custom-domains/v1/store.bammservice.com"
-
-# Poll until registration_status is registered (TLS usually ready within a few minutes)
 curl -sL "https://icp.net/custom-domains/v1/store.bammservice.com"
 ```
 
-**Completed 2026-07-13:** validate → `valid`; register → accepted; status → `registered`; `https://store.bammservice.com/` → HTTP 200.
+Result: `registration_status: registered`; `https://store.bammservice.com/` → HTTP 200.
 
 ---
 
-## Step 4 — II / env after domain is Available
+## Step 4 — II / env cutover
 
 **What this is:** storefront browser login + deployed `env.json` for the **web app**, not the desktop entitlement actor path.
 
-| Concern | Step 4 (this) | Desktop entitlements |
-|---------|---------------|----------------------|
+| Concern | Step 4 | Desktop entitlements |
+|---------|--------|----------------------|
 | Who | Humans in browser on the store | Packaged BAMM backend |
 | Identity | Internet Identity principals | RSA license + machine digest |
 | Config | `ii_derivation_origin` in frontend `env.json` | `BAMM_COMMERCE_*` / canister defaults |
 | Brand URL | Yes — `https://store.bammservice.com` | No — keep `*.icp0.io` + `icp-api.io` |
 
-1. Set `ii_derivation_origin` to `https://store.bammservice.com` (CI inject in `dfx-deploy.yml` today writes `https://<frontend>.icp0.io`).  
-2. Redeploy frontend so live `env.json` and asset canister pick up the new origin.  
-3. Test Internet Identity on both `https://store.bammservice.com` and the `.icp0.io` URL. If II rejects an origin, add `.well-known/ii-alternative-origins` listing both hosts (same human can keep one principal across both URLs only if II alternative origins are configured correctly).  
-4. Update Stripe return URLs / RESEND links if they hardcode `.icp0.io`.
+### Implementation (2026-07-13)
 
-**Risk if skipped:** Admin II login on the brand domain may create a **different principal** than on `.icp0.io`, so existing admin roles appear missing.  
-**Risk if done too early (before TLS):** II / browsers reject the origin. TLS is already registered (2026-07-13).  
-**Does not change:** desktop `activateEntitlement` routing (already pointed at dfx canisters for obscurity).
+1. CI (`dfx-deploy.yml`) writes `ii_derivation_origin` = `https://store.bammservice.com`.  
+2. `frontend/public/.well-known/ii-alternative-origins` lists `https://5xyyv-paaaa-aaaao-bbebq-cai.icp0.io` so both hosts share principals (brand = primary).  
+3. `.ic-assets.json5` serves alternative-origins as JSON with CORS.  
+4. Social login passes the same `derivationOrigin` from `env.json`.  
+5. Admin invite / elevation RESEND bodies use `https://store.bammservice.com/admin/accept-invite`.  
+6. Stripe success/cancel URLs already use `window.location` (brand host when browsing there).  
+7. Legal Terms copy references `store.bammservice.com`.
+
+**Operator note:** Admins who previously authenticated only under the old `.icp0.io` derivation origin may see a new principal after this cutover. Use `/admin-claim` with the super-admin claim code if Admin access is missing.
+
+**Does not change:** desktop `activateEntitlement` routing (canister obscurity).
 
 ---
 
@@ -125,14 +104,16 @@ curl -sL "https://icp.net/custom-domains/v1/store.bammservice.com"
 
 - [x] `curl https://store.bammservice.com/` returns the BAMM storefront (not Squarespace) — verified 2026-07-13  
 - [x] `curl https://store.bammservice.com/.well-known/ic-domains` lists `store.bammservice.com` — verified 2026-07-13  
-- [ ] II login → Admin works on the custom host  
-- [ ] Stripe test checkout return URL works on `store.bammservice.com`  
-- [x] Caffeine `bamm-gw3` left untouched (backup — DDR-008)
+- [ ] II login → Admin works on `https://store.bammservice.com` (operator)  
+- [ ] Stripe test checkout return URL works on `store.bammservice.com` (operator)  
+- [x] Caffeine `bamm-gw3` left untouched (backup — DDR-008)  
+- [x] Live `env.json` has `ii_derivation_origin` = `https://store.bammservice.com` (after deploy)  
+- [x] `/.well-known/ii-alternative-origins` lists the frontend canister URL (after deploy)
 
 ## Agent locks
 
 - Do not change Squarespace `www`/apex or disconnect the primary domain (Option B only).  
-- Do not point desktop production at `store.bammservice.com` until II + env cutover is verified.  
+- Desktop activation keeps opaque canister URLs (not brand domain).  
 - Do not register the domain before `.well-known/ic-domains` is live on the canister.  
 - Use `https://icp.net/custom-domains/v1/...` — not deprecated `icp0.io/registrations`.
 
