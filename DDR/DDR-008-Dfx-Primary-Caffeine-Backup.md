@@ -15,7 +15,7 @@
 
 1. New features, admin fixes, installer hosting, Stripe/RESEND, and licensing changes land in **`bamm-dfx-web-store`** first.
 2. **Do not** invest in Caffeine import/promote/tag train unless restoring backup after a dfx outage.
-3. Desktop production cutover (pointing packaged apps at dfx canister IDs) remains a **separate** explicit decision — this DDR does **not** by itself change desktop activate URLs.
+3. Desktop production cutover for **entitlement activation** defaults to dfx canister IDs (opaque `.icp0.io` env discovery — see BAMM `docs/ddr/licensing/2026-07-13-desktop-entitlement-dfx-canister-obscurity.md`). Brand-domain II/env (`store.bammservice.com`) remains [DDR-009](DDR-009-Custom-Domain-Bammservice.md) Step 4.
 4. Custom domain **`store.bammservice.com`** → dfx frontend is [DDR-009](DDR-009-Custom-Domain-Bammservice.md) (Option A).
 
 ## Operator mental model (updated)
