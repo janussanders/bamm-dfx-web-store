@@ -18,6 +18,7 @@
 | [DDR-038](DDR-038-Dfx-IC0503-Deploy-Decision-Tree.md) | IC0503: when frontend vs backend deploys succeed | Implemented (lock) | 2026-07-13 |
 | [DDR-039](DDR-039-Feature-Image-List-Query-Overflow.md) | Feature images blow list queries → false empty Admin | Implemented | 2026-07-13 |
 | [DDR-040](DDR-040-Feature-Image-Lightbox.md) | Free/Premium image lightbox + Premium View chip | Implemented | 2026-07-13 |
+| [DDR-041](DDR-041-Store-Download-Upload-Throughput.md) | Store download/upload throughput (installers) | Phase A done | 2026-07-13 |
 
 **Runbook:** [docs/dfx-deploy.md](../docs/dfx-deploy.md) · **CI identity:** [docs/dfx-ci-identity.md](../docs/dfx-ci-identity.md)
 
@@ -26,6 +27,7 @@
 | Failure | Read |
 |---------|------|
 | Installer bar → 100%, file missing | [DDR-005](DDR-005-Dfx-Chunked-Installer-Upload.md) |
+| Installer download takes minutes / feels stuck | [DDR-041](DDR-041-Store-Download-Upload-Throughput.md) |
 | `Memory-incompatible program upgrade` / IC0503 on backend upgrade | [DDR-006](DDR-006-Dfx-EOP-Actor-Field-Append-Order.md) + [DDR-038](DDR-038-Dfx-IC0503-Deploy-Decision-Tree.md) |
 | Features Management empty after image upload / wants re-init | [DDR-039](DDR-039-Feature-Image-List-Query-Overflow.md) |
 | Premium image click steals selection / lightbox vs Stripe | [DDR-040](DDR-040-Feature-Image-Lightbox.md) |
