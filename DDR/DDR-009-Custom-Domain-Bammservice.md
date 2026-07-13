@@ -90,7 +90,7 @@ Result: `registration_status: registered`; `https://store.bammservice.com/` → 
 2. `frontend/public/.well-known/ii-alternative-origins` lists `https://5xyyv-paaaa-aaaao-bbebq-cai.icp0.io` so both hosts share principals (brand = primary).  
 3. `.ic-assets.json5` serves alternative-origins as JSON with CORS.  
 4. Social login passes the same `derivationOrigin` from `env.json`.  
-5. Admin invite / elevation RESEND bodies use `https://store.bammservice.com/admin/accept-invite`.  
+5. Admin invite / elevation RESEND bodies updated in source to `https://store.bammservice.com/admin/accept-invite` (**backend wasm not yet upgraded** — full deploy hit IC0503; frontend-only deploy used for Step 4 assets).  
 6. Stripe success/cancel URLs already use `window.location` (brand host when browsing there).  
 7. Legal Terms copy references `store.bammservice.com`.
 
@@ -98,6 +98,7 @@ Result: `registration_status: registered`; `https://store.bammservice.com/` → 
 
 **Does not change:** desktop `activateEntitlement` routing (canister obscurity).
 
+**Follow-up:** Redeploy backend when IC0503 is resolved (DDR-006 append-only / toolchain align) so invite emails use the brand URL.
 ---
 
 ## Step 5 — Acceptance checklist

@@ -20,6 +20,15 @@ on:
         required: true
         default: false
         type: boolean
+      canisters:
+        description: 'Which canisters to deploy (frontend-only avoids backend IC0503)'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - frontend
+          - backend
 
 permissions:
   contents: read
@@ -138,10 +147,22 @@ jobs:
           path.write_text(json.dumps(data, indent=2) + "\n")
           print(path.read_text())
           PY
-          dfx deploy --network "$DFX_NETWORK" --yes --identity ci
+          TARGET="${{ inputs.canisters }}"
+          case "$TARGET" in
+            frontend)
+              dfx deploy frontend --network "$DFX_NETWORK" --yes --identity ci
+              ;;
+            backend)
+              dfx deploy backend --network "$DFX_NETWORK" --yes --identity ci
+              ;;
+            *)
+              dfx deploy --network "$DFX_NETWORK" --yes --identity ci
+              ;;
+          esac
           {
             echo "## BAMM dfx Web Store deploy"
             echo "- **Network:** $DFX_NETWORK"
+            echo "- **Target:** \`$TARGET\`"
             echo "- **Backend:** \`$BACKEND_ID\`"
             echo "- **Frontend:** \`$FRONTEND_ID\`"
             echo "- **Storefront:** https://store.bammservice.com"
