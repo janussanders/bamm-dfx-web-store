@@ -757,6 +757,7 @@ export function useAddLicenseFeature() {
       // Invalidate both queries to ensure license generation panel updates
       queryClient.invalidateQueries({ queryKey: ["licenseFeatures"] });
       queryClient.invalidateQueries({ queryKey: ["premiumFeatures"] });
+      queryClient.invalidateQueries({ queryKey: ["coreFeatures"] });
     },
   });
 }
@@ -831,6 +832,53 @@ export function useInitializeDefaultPremiumFeatures() {
   });
 }
 
+/** Homepage Learn More categories — seeded via addLicenseFeature when Motoko helper is absent (DDR-038). */
+const DEFAULT_CORE_FEATURES: LicenseFeature[] = [
+  {
+    id: "dashboard",
+    name: "Dashboard",
+    description:
+      "Your financial command center. See income, expenses, and balances in one view.",
+    isPremium: false,
+    isActive: true,
+    priceInCents: 0n,
+    featureType: "Core",
+    licenseReferenceName: "",
+  },
+  {
+    id: "bill_files",
+    name: "Bill Files",
+    description:
+      "Organize, track, and manage bills with due dates and payment status.",
+    isPremium: false,
+    isActive: true,
+    priceInCents: 0n,
+    featureType: "Core",
+    licenseReferenceName: "",
+  },
+  {
+    id: "income_tracking",
+    name: "Income and Bill Tracking",
+    description:
+      "Track income sources and spending so you always know what is left after bills.",
+    isPremium: false,
+    isActive: true,
+    priceInCents: 0n,
+    featureType: "Core",
+    licenseReferenceName: "",
+  },
+];
+
+function isMissingCanisterMethodError(error: unknown, method: string): boolean {
+  const msg = error instanceof Error ? error.message : String(error);
+  return (
+    msg.includes("IC0536") ||
+    msg.includes("no update method") ||
+    msg.includes(`'${method}'`) ||
+    msg.includes(method)
+  );
+}
+
 export function useInitializeDefaultCoreFeatures() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -838,7 +886,28 @@ export function useInitializeDefaultCoreFeatures() {
   return useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error("Actor not available");
-      return actor.initializeDefaultCoreFeatures();
+
+      // Prefer Motoko helper when the backend has been upgraded.
+      try {
+        await actor.initializeDefaultCoreFeatures();
+        return { mode: "canister" as const, created: DEFAULT_CORE_FEATURES.length };
+      } catch (error) {
+        if (!isMissingCanisterMethodError(error, "initializeDefaultCoreFeatures")) {
+          throw error;
+        }
+      }
+
+      // Live backend may lack the helper until Motoko upgrade succeeds (DDR-038).
+      // Seed with the existing addLicenseFeature API (idempotent: skip known ids).
+      const existing = await actor.getLicenseFeatures();
+      const existingIds = new Set(existing.map((f) => f.id));
+      let created = 0;
+      for (const feature of DEFAULT_CORE_FEATURES) {
+        if (existingIds.has(feature.id)) continue;
+        await actor.addLicenseFeature(feature);
+        created += 1;
+      }
+      return { mode: "client" as const, created };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["licenseFeatures"] });

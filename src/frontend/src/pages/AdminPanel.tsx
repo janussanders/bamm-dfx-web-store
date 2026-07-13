@@ -593,8 +593,14 @@ export default function AdminPanel() {
 
   const handleInitializeCoreFeatures = async () => {
     try {
-      await initializeCoreFeatures.mutateAsync();
-      toast.success("Default free features initialized successfully");
+      const result = await initializeCoreFeatures.mutateAsync();
+      if (result.created === 0) {
+        toast.success("Free features already present");
+      } else {
+        toast.success(
+          `Initialized ${result.created} free feature${result.created === 1 ? "" : "s"}`,
+        );
+      }
     } catch (error) {
       console.error("Core feature initialization error:", error);
       toast.error("Failed to initialize free features");

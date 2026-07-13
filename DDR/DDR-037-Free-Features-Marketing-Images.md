@@ -27,3 +27,7 @@ Premium Features already support admin image upload via `uploadFeatureImage` / `
 ## Consequence
 
 Admins initialize Free Features once, upload three images, and the homepage Learn More accordion shows them without a frontend redeploy of static assets.
+
+## Deploy note (DDR-038)
+
+`initializeDefaultCoreFeatures` may be missing on the live Motoko canister until a backend upgrade succeeds. Admin **Initialize Default Free Features** falls back to existing `addLicenseFeature` for ids `dashboard` / `bill_files` / `income_tracking` so Free Features image upload works without a Motoko deploy.
