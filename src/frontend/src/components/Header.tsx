@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Menu, Shield, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { SocialLoginButtons } from "../components/SocialLoginButtons";
 import { useIsAdmin } from "../hooks/useQueries";
@@ -27,15 +27,12 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center space-x-2">
-          <img
-            src="/assets/generated/bamm-logo-transparent.dim_200x200.png"
-            alt="BAMM Logo"
-            className="h-8 w-8"
-          />
-          <span className="text-xl font-bold">
-            B.A.M.M<span className="text-primary">!</span>
-          </span>
+        <Link
+          to="/"
+          className="text-xl font-bold tracking-tight"
+          aria-label="B.A.M.M! home"
+        >
+          B.A.M.M<span className="text-primary">!</span>
         </Link>
 
         {/* Desktop Navigation */}

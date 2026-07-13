@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="B.A.M.M!">
+  <rect width="64" height="64" rx="14" fill="#0a0a0b"/>
+  <text
+    x="28"
+    y="42"
+    text-anchor="middle"
+    font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif"
+    font-size="28"
+    font-weight="800"
+    fill="#fafafa"
+  >B</text>
+  <text
+    x="44"
+    y="42"
+    text-anchor="middle"
+    font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif"
+    font-size="28"
+    font-weight="800"
+    fill="#a78bfa"
+  >!</text>
+</svg>
