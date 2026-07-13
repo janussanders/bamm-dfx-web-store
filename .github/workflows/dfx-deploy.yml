@@ -122,38 +122,40 @@ jobs:
           dfx identity use ci
           dfx identity get-principal
           dfx cycles balance --network "$DFX_NETWORK" || true
+          TARGET="${{ inputs.canisters }}"
           # Create deposits must cover subnet creation fee (~0.5 TC) plus install headroom.
           dfx canister create backend --network "$DFX_NETWORK" --identity ci --with-cycles 1200000000000 || true
           dfx canister create frontend --network "$DFX_NETWORK" --identity ci --with-cycles 1200000000000 || true
           BACKEND_ID=$(dfx canister id backend --network "$DFX_NETWORK")
           FRONTEND_ID=$(dfx canister id frontend --network "$DFX_NETWORK")
-          # Prefer topping up existing canisters from the cycles ledger before install.
-          dfx cycles top-up backend 500000000000 --network "$DFX_NETWORK" --identity ci || true
-          dfx cycles top-up frontend 300000000000 --network "$DFX_NETWORK" --identity ci || true
+          # Top-ups are best-effort; skip large top-ups on frontend-only to conserve ledger balance.
+          if [ "$TARGET" = "all" ] || [ "$TARGET" = "backend" ]; then
+            dfx cycles top-up backend 500000000000 --network "$DFX_NETWORK" --identity ci || true
+          fi
+          if [ "$TARGET" = "all" ] || [ "$TARGET" = "frontend" ]; then
+            dfx cycles top-up frontend 100000000000 --network "$DFX_NETWORK" --identity ci || true
+          fi
           # Inject live canister config before dfx rebuilds/uploads the assets canister.
-          BACKEND_ID="$BACKEND_ID" FRONTEND_ID="$FRONTEND_ID" python3 - <<'PY'
+          BACKEND_ID="$BACKEND_ID" python3 -c '
           import json, os
           from pathlib import Path
           data = {
               "backend_host": "https://icp-api.io",
               "backend_canister_id": os.environ["BACKEND_ID"],
               "project_id": "bamm-dfx-web-store",
-              # Brand domain is II primary (DDR-009 Step 4). .icp0.io is listed in
-              # /.well-known/ii-alternative-origins so both hosts share principals.
               "ii_derivation_origin": "https://store.bammservice.com",
               "storage_gateway_url": "undefined",
           }
           path = Path("src/frontend/env.json")
           path.write_text(json.dumps(data, indent=2) + "\n")
           print(path.read_text())
-          PY
-          TARGET="${{ inputs.canisters }}"
+          '
           case "$TARGET" in
             frontend)
               # dfx.json lists frontend → backend dependency, so plain
               # `dfx deploy frontend` still upgrades Motoko and can IC0503.
               # Drop the dependency for this install only.
-              python3 - <<'PY'
+              python3 -c '
               import json
               from pathlib import Path
               path = Path("dfx.json")
@@ -161,7 +163,7 @@ jobs:
               data["canisters"]["frontend"].pop("dependencies", None)
               path.write_text(json.dumps(data, indent=2) + "\n")
               print("frontend dependencies cleared for frontend-only deploy")
-              PY
+              '
               dfx deploy frontend --network "$DFX_NETWORK" --yes --identity ci
               ;;
             backend)
