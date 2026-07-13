@@ -134,7 +134,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
       "We use trusted processors, including:",
       "• Stripe — payment processing",
       "• RESEND — transactional email delivery",
-      "• Internet Computer / Caffeine.ai — application hosting and entitlement registry storage",
+      "• Internet Computer — application hosting and entitlement registry storage",
       "Processors are authorized only to perform services on our behalf.",
     ],
   },
