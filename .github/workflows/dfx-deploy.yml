@@ -136,34 +136,13 @@ jobs:
             dfx cycles top-up frontend 100000000000 --network "$DFX_NETWORK" --identity ci || true
           fi
           # Inject live canister config before dfx rebuilds/uploads the assets canister.
-          BACKEND_ID="$BACKEND_ID" python3 -c '
-          import json, os
-          from pathlib import Path
-          data = {
-              "backend_host": "https://icp-api.io",
-              "backend_canister_id": os.environ["BACKEND_ID"],
-              "project_id": "bamm-dfx-web-store",
-              "ii_derivation_origin": "https://store.bammservice.com",
-              "storage_gateway_url": "undefined",
-          }
-          path = Path("src/frontend/env.json")
-          path.write_text(json.dumps(data, indent=2) + "\n")
-          print(path.read_text())
-          '
+          BACKEND_ID="$BACKEND_ID" python3 -c "import json,os; from pathlib import Path; data={'backend_host':'https://icp-api.io','backend_canister_id':os.environ['BACKEND_ID'],'project_id':'bamm-dfx-web-store','ii_derivation_origin':'https://store.bammservice.com','storage_gateway_url':'undefined'}; path=Path('src/frontend/env.json'); path.write_text(json.dumps(data, indent=2)+chr(10)); print(path.read_text())"
           case "$TARGET" in
             frontend)
               # dfx.json lists frontend → backend dependency, so plain
               # `dfx deploy frontend` still upgrades Motoko and can IC0503.
               # Drop the dependency for this install only.
-              python3 -c '
-              import json
-              from pathlib import Path
-              path = Path("dfx.json")
-              data = json.loads(path.read_text())
-              data["canisters"]["frontend"].pop("dependencies", None)
-              path.write_text(json.dumps(data, indent=2) + "\n")
-              print("frontend dependencies cleared for frontend-only deploy")
-              '
+              python3 -c "import json; from pathlib import Path; path=Path('dfx.json'); data=json.loads(path.read_text()); data['canisters']['frontend'].pop('dependencies', None); path.write_text(json.dumps(data, indent=2)+chr(10)); print('frontend dependencies cleared for frontend-only deploy')"
               dfx deploy frontend --network "$DFX_NETWORK" --yes --identity ci
               ;;
             backend)
