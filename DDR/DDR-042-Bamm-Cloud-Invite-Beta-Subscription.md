@@ -37,8 +37,10 @@ Path B runtimes follow [BAMM Azure Container Apps runtime contract](https://gith
 
 - Id: `bamm_cloud_beta_monthly`
 - Mode: Stripe Billing `subscription` (monthly)
-- Entitles **both** Path A and Path B
+- Price (economics DDR): **$39.99/mo** or **$399/yr**; optional Always-On add-on **+$29.99/mo**
+- Entitles **both** Path A and Path B (Path B default **scale-to-zero**)
 - Gate: invite allowlist before checkout (**prefer block** if not invited)
+- Companion economics: BAMM `2026-07-16-bamm-cloud-beta-subscription-economics.md`
 
 ### Dual-track state machine
 
