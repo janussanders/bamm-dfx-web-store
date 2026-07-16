@@ -19,6 +19,7 @@
 | [DDR-039](DDR-039-Feature-Image-List-Query-Overflow.md) | Feature images blow list queries → false empty Admin | Implemented | 2026-07-13 |
 | [DDR-040](DDR-040-Feature-Image-Lightbox.md) | Free/Premium image lightbox + Premium View chip | Implemented | 2026-07-13 |
 | [DDR-041](DDR-041-Store-Download-Upload-Throughput.md) | Store download/upload throughput (installers) | Phase A done | 2026-07-13 |
+| [DDR-042](DDR-042-Bamm-Cloud-Invite-Beta-Subscription.md) | BAMM Cloud invite-only Hybrid A+B (desktop entitlement + Azure hosted; II+OTP) | Proposed | 2026-07-16 |
 
 **Runbook:** [docs/dfx-deploy.md](../docs/dfx-deploy.md) · **CI identity:** [docs/dfx-ci-identity.md](../docs/dfx-ci-identity.md)
 
