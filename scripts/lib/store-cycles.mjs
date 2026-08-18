@@ -183,6 +183,75 @@ export function addDaysIso(fromMs, days) {
   return new Date(ms).toISOString().slice(0, 10);
 }
 
+export function addMsIso(fromMs, days) {
+  if (!Number.isFinite(days)) return null;
+  return new Date(fromMs + days * TARGETS.secPerDay * 1000).toISOString();
+}
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+/** Calendar clock UTC: dd/mm/yy hh:mm:ss (DDR-044). */
+export function formatDdMmYyHhMmSsUtc(isoOrMs) {
+  if (isoOrMs == null || isoOrMs === "unknown") return "—";
+  const d = typeof isoOrMs === "number" ? new Date(isoOrMs) : new Date(isoOrMs);
+  if (Number.isNaN(d.getTime())) return "—";
+  return `${pad2(d.getUTCDate())}/${pad2(d.getUTCMonth() + 1)}/${String(d.getUTCFullYear()).slice(-2)} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}:${pad2(d.getUTCSeconds())}`;
+}
+
+/** Remaining duration: DDDd HH:mm:ss (DDR-044). */
+export function formatRemainingClock(ms) {
+  if (!Number.isFinite(ms) || ms <= 0) return "000d 00:00:00";
+  const totalSec = Math.floor(ms / 1000);
+  const days = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const minutes = Math.floor((totalSec % 3600) / 60);
+  const seconds = totalSec % 60;
+  return `${String(days).padStart(3, "0")}d ${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`;
+}
+
+export function finiteOrNull(n) {
+  return Number.isFinite(n) ? n : null;
+}
+
+export function buildPublicCyclesHealth({
+  backendId,
+  frontendId,
+  backend,
+  frontend,
+  evalResult,
+  nowMs,
+  band,
+}) {
+  const etaAt = (days) => addMsIso(nowMs, days);
+  return {
+    schema: "bamm-dfx-cycles-health/v1",
+    at: new Date(nowMs).toISOString(),
+    atMs: nowMs,
+    backendId,
+    frontendId,
+    etaFreeze: evalResult.etaFreeze,
+    etaZero: evalResult.etaZero,
+    etaFreezeAt: etaAt(evalResult.daysToFreeze),
+    etaZeroAt: etaAt(evalResult.daysToZero),
+    daysToFreeze: finiteOrNull(evalResult.daysToFreeze),
+    daysToZero: finiteOrNull(evalResult.daysToZero),
+    band,
+    winner: evalResult.winner,
+    backend: {
+      status: backend.status,
+      etaFreezeAt: etaAt(evalResult.backendEta?.daysToFreeze),
+      daysToFreeze: finiteOrNull(evalResult.backendEta?.daysToFreeze),
+    },
+    frontend: {
+      status: frontend.status,
+      etaFreezeAt: etaAt(evalResult.frontendEta?.daysToFreeze),
+      daysToFreeze: finiteOrNull(evalResult.frontendEta?.daysToFreeze),
+    },
+  };
+}
+
 export function evaluateStoreSnapshot({
   backend,
   frontend,
@@ -263,6 +332,8 @@ export function evaluateStoreSnapshot({
     band,
     etaFreeze: addDaysIso(nowMs, daysToFreeze),
     etaZero: addDaysIso(nowMs, daysToZero),
+    etaFreezeAt: addMsIso(nowMs, daysToFreeze),
+    etaZeroAt: addMsIso(nowMs, daysToZero),
     cyclesSum: nowCycles,
     backendStopped,
     frontendStopped,

@@ -10,6 +10,7 @@ export const DFX_STORE_TARGETS = {
   githubRepo: "janussanders/bamm-dfx-web-store",
   sentinelWorkflowFile: "store-cycles-sentinel.yml",
   icDashboardCanister: "https://dashboard.internetcomputer.org/canister",
+  cyclesHealthBranch: "cycles-health",
 } as const;
 
 export function icDashboardUrl(canisterId: string): string {
@@ -19,4 +20,13 @@ export function icDashboardUrl(canisterId: string): string {
 export function sentinelWorkflowUrl(): string {
   const { githubRepo, sentinelWorkflowFile } = DFX_STORE_TARGETS;
   return `https://github.com/${githubRepo}/actions/workflows/${sentinelWorkflowFile}`;
+}
+
+export function cyclesHealthUrls(): string[] {
+  const { githubRepo, cyclesHealthBranch } = DFX_STORE_TARGETS;
+  const path = "ops/cycles-health.json";
+  return [
+    `https://raw.githubusercontent.com/${githubRepo}/${cyclesHealthBranch}/${path}`,
+    `https://cdn.jsdelivr.net/gh/${githubRepo}@${cyclesHealthBranch}/${path}`,
+  ];
 }

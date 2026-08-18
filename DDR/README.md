@@ -21,6 +21,7 @@
 | [DDR-041](DDR-041-Store-Download-Upload-Throughput.md) | Store download/upload throughput (installers) | Phase A done | 2026-07-13 |
 | [DDR-042](DDR-042-Bamm-Cloud-Invite-Beta-Subscription.md) | BAMM Cloud invite-only Hybrid A+B (desktop entitlement + Azure hosted; II+OTP) | Proposed | 2026-07-16 |
 | [DDR-043](DDR-043-Store-Cycles-Expiry-Alerts.md) | Store cycles sentinel (memory remaining-time + Super Admin emails) | Phase 1 implemented | 2026-08-18 |
+| [DDR-044](DDR-044-Admin-Cycles-Remaining-Clocks.md) | Admin NNS/cycles card: remaining freeze clocks `dd/mm/yy hh:mm:ss` | Implemented | 2026-08-18 |
 
 **Runbook:** [docs/dfx-deploy.md](../docs/dfx-deploy.md) · **CI identity:** [docs/dfx-ci-identity.md](../docs/dfx-ci-identity.md)
 
@@ -35,6 +36,7 @@
 | Premium image click steals selection / lightbox vs Stripe | [DDR-040](DDR-040-Feature-Image-Lightbox.md) |
 | dfx hang / keyring; cycles create vs install; pnpm TTY; no admin after II | [DDR-007](DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md) |
 | Store / canister out of cycles; NNS → GitHub ICP top-up; freeze warning emails | [DDR-043](DDR-043-Store-Cycles-Expiry-Alerts.md) |
+| Admin cycles card has no remaining `dd/mm/yy hh:mm:ss` clocks | [DDR-044](DDR-044-Admin-Cycles-Remaining-Clocks.md) |
 | No Super Admin after II login | [DDR-002](DDR-002-Dfx-Internet-Identity-Security.md) |
 | Email ready but yellow “Configuration Required” banner | [DDR-010](DDR-010-Email-Banner-Resend-Status.md) |
 | Point brand URL at IC frontend | [DDR-009](DDR-009-Custom-Domain-Bammservice.md) |

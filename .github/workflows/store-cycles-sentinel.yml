@@ -21,7 +21,7 @@ on:
         type: boolean
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: store-cycles-sentinel
@@ -108,10 +108,20 @@ jobs:
           export PATH="$HOME/.local/share/dfx/bin:$PATH"
           node scripts/store-cycles-sentinel.mjs
 
+      - name: Publish cycles-health JSON (git branch only — no dfx deploy)
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: bash scripts/publish-cycles-health.sh
+
       - name: Upload snapshot
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: store-cycles-sentinel-${{ github.run_id }}
-          path: .cache/store-cycles-sentinel.json
+          path: |
+            .cache/store-cycles-sentinel.json
+            .cache/cycles-health.json
+            ops/cycles-health.json
           if-no-files-found: ignore

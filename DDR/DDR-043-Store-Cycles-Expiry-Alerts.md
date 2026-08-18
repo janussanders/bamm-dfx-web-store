@@ -282,6 +282,8 @@ Super Admin–only **Cycles** card on Admin (not Features Manager / License Gene
 
 **Phase 1 (shipped):** Admin → Admin Management → **NNS account & dfx cycles** card (NNS URL, CI account ID, pinned dfx canister IDs, IC dashboard, sentinel workflow). GitHub Actions **Store cycles sentinel** (`store-cycles-sentinel.yml`) is status-only: no deploy, no reinstall, no `canister create`, no Caffeine. Live cycle ETAs live in the workflow summary; emails use `CYCLE_ALERT_FALLBACK_EMAILS` until Phase 2.
 
+**On-card remaining clocks (`dd/mm/yy hh:mm:ss`):** [DDR-044](DDR-044-Admin-Cycles-Remaining-Clocks.md) (proposed addition — freeze instant + ticking remaining; no Motoko).
+
 ## Phased delivery (IC0503-aware)
 
 Live backend may be **layout-locked** ([DDR-038](DDR-038-Dfx-IC0503-Deploy-Decision-Tree.md)). Do not block alerting on a Motoko upgrade.

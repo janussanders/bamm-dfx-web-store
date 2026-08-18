@@ -8,7 +8,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  type CyclesHealthV1,
+  bandFromHealth,
+  formatDdMmYyHhMmSsUtc,
+  formatRemainingClock,
+  remainingMs,
+} from "@/lib/cyclesClocks";
+import {
   DFX_STORE_TARGETS,
+  cyclesHealthUrls,
   icDashboardUrl,
   sentinelWorkflowUrl,
 } from "@/lib/dfxStoreTargets";
@@ -21,12 +29,56 @@ type PublicCanisterInfo = {
   module_hash?: string | null;
   subnet_id?: string | null;
   updated_at?: string | null;
-  controllers?: string[];
 };
+
+function useNowMs(intervalMs = 1000) {
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNowMs(Date.now()), intervalMs);
+    return () => window.clearInterval(id);
+  }, [intervalMs]);
+  return nowMs;
+}
+
+function useCyclesHealth() {
+  const [health, setHealth] = useState<CyclesHealthV1 | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const urls = cyclesHealthUrls();
+    (async () => {
+      for (const base of urls) {
+        try {
+          const res = await fetch(`${base}?t=${Date.now()}`);
+          if (!res.ok) continue;
+          const json = (await res.json()) as CyclesHealthV1;
+          if (json.backendId !== DFX_STORE_TARGETS.backendCanisterId) continue;
+          if (json.frontendId !== DFX_STORE_TARGETS.frontendCanisterId) continue;
+          if (json.backendId === DFX_STORE_TARGETS.caffeineBackendForbidden) {
+            continue;
+          }
+          if (!cancelled) {
+            setHealth(json);
+            setError(null);
+          }
+          return;
+        } catch {
+          /* try next mirror */
+        }
+      }
+      if (!cancelled) {
+        setError("No sentinel snapshot yet — run Store cycles sentinel");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return { health, error };
+}
 
 function usePublicCanister(id: string) {
   const [data, setData] = useState<PublicCanisterInfo | null>(null);
-  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
     const url = `https://ic-api.internetcomputer.org/api/v3/canisters/${id}`;
@@ -38,16 +90,14 @@ function usePublicCanister(id: string) {
       .then((json) => {
         if (!cancelled) setData(json);
       })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "IC API unavailable");
-        }
+      .catch(() => {
+        /* dashboard link remains */
       });
     return () => {
       cancelled = true;
     };
   }, [id]);
-  return { data, error };
+  return data;
 }
 
 function CopyField({ label, value }: { label: string; value: string }) {
@@ -73,38 +123,82 @@ function CopyField({ label, value }: { label: string; value: string }) {
   );
 }
 
+function bandBadgeClass(band: string): string {
+  if (band === "day") return "bg-red-600 text-white";
+  if (band === "week") return "bg-orange-500 text-white";
+  if (band === "month") return "bg-amber-500 text-black";
+  if (band === "healthy") return "bg-emerald-600 text-white";
+  return "";
+}
+
+function RemainingClocks({
+  etaFreezeAt,
+  etaZeroAt,
+  nowMs,
+}: {
+  etaFreezeAt?: string | null;
+  etaZeroAt?: string | null;
+  nowMs: number;
+}) {
+  const rem = remainingMs(etaFreezeAt, nowMs);
+  const frozen = Number.isFinite(rem) && rem <= 0;
+  return (
+    <div className="grid gap-2 font-mono text-sm">
+      <div>
+        <div className="text-xs text-muted-foreground">Freeze at (UTC)</div>
+        <div className="text-base font-semibold tracking-wide">
+          {formatDdMmYyHhMmSsUtc(etaFreezeAt)}
+        </div>
+      </div>
+      <div>
+        <div className="text-xs text-muted-foreground">Remaining</div>
+        <div
+          className={`text-lg font-semibold tracking-wide ${frozen ? "text-red-600" : ""}`}
+        >
+          {Number.isFinite(rem) ? formatRemainingClock(rem) : "—"}
+        </div>
+      </div>
+      {etaZeroAt && (
+        <div>
+          <div className="text-xs text-muted-foreground">Zero at (UTC)</div>
+          <div className="text-xs tracking-wide">
+            {formatDdMmYyHhMmSsUtc(etaZeroAt)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CanisterStatusRow({
   label,
   id,
+  etaFreezeAt,
+  nowMs,
 }: {
   label: string;
   id: string;
+  etaFreezeAt?: string | null;
+  nowMs: number;
 }) {
-  const { data, error } = usePublicCanister(id);
+  const data = usePublicCanister(id);
+  const rem = remainingMs(etaFreezeAt, nowMs);
   return (
     <div className="rounded-lg border p-3 space-y-2">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium">{label}</span>
         <Badge variant="outline">{id.slice(0, 5)}…</Badge>
-        {data ? (
-          <Badge>on subnet</Badge>
-        ) : error ? (
-          <Badge variant="secondary">dashboard for live cycles</Badge>
-        ) : (
-          <Badge variant="secondary">loading</Badge>
-        )}
       </div>
       <p className="text-xs text-muted-foreground font-mono break-all">{id}</p>
+      <RemainingClocks etaFreezeAt={etaFreezeAt} nowMs={nowMs} />
       {data?.updated_at && (
         <p className="text-xs text-muted-foreground">
-          IC index updated {new Date(data.updated_at).toLocaleString()} · subnet{" "}
-          <span className="font-mono">{data.subnet_id?.slice(0, 12)}…</span>
+          IC index {formatDdMmYyHhMmSsUtc(data.updated_at)} UTC
         </p>
       )}
-      {error && (
+      {!Number.isFinite(rem) && (
         <p className="text-xs text-muted-foreground">
-          Public cycle balances are controller-only. Open the IC dashboard or
-          the sentinel workflow for Balance / freeze ETA.
+          Remaining clocks fill after the next sentinel snapshot.
         </p>
       )}
       <Button variant="outline" size="sm" asChild>
@@ -119,6 +213,12 @@ function CanisterStatusRow({
 
 export default function NnsCyclesStatusCard() {
   const t = DFX_STORE_TARGETS;
+  const nowMs = useNowMs(1000);
+  const { health, error } = useCyclesHealth();
+  const band = bandFromHealth(health, nowMs);
+  const stale =
+    health?.atMs != null && nowMs - health.atMs > 12 * 60 * 60 * 1000;
+
   return (
     <Card className="mb-4">
       <CardHeader>
@@ -133,6 +233,38 @@ export default function NnsCyclesStatusCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge className={bandBadgeClass(band)}>
+            {band === "healthy"
+              ? "healthy"
+              : band === "month"
+                ? "1 month"
+                : band === "week"
+                  ? "1 week"
+                  : band === "day"
+                    ? "1 day"
+                    : "unknown"}
+          </Badge>
+          {stale && <Badge variant="secondary">sentinel stale</Badge>}
+          {health?.at && (
+            <span className="text-xs text-muted-foreground">
+              Last measured {formatDdMmYyHhMmSsUtc(health.at)} UTC
+            </span>
+          )}
+        </div>
+
+        <div className="rounded-lg border p-4 bg-muted/40">
+          <div className="text-sm font-medium mb-2">Store freeze (combined)</div>
+          {error && !health && (
+            <p className="text-sm text-muted-foreground">{error}</p>
+          )}
+          <RemainingClocks
+            etaFreezeAt={health?.etaFreezeAt}
+            etaZeroAt={health?.etaZeroAt}
+            nowMs={nowMs}
+          />
+        </div>
+
         <div className="flex flex-wrap gap-2">
           <Button asChild>
             <a href={t.nnsAccountsUrl} target="_blank" rel="noreferrer">
@@ -160,14 +292,24 @@ export default function NnsCyclesStatusCard() {
         />
 
         <div className="grid gap-3 md:grid-cols-2">
-          <CanisterStatusRow label="Backend (dmg + exe)" id={t.backendCanisterId} />
-          <CanisterStatusRow label="Frontend (store UI)" id={t.frontendCanisterId} />
+          <CanisterStatusRow
+            label="Backend (dmg + exe)"
+            id={t.backendCanisterId}
+            etaFreezeAt={health?.backend?.etaFreezeAt}
+            nowMs={nowMs}
+          />
+          <CanisterStatusRow
+            label="Frontend (store UI)"
+            id={t.frontendCanisterId}
+            etaFreezeAt={health?.frontend?.etaFreezeAt}
+            nowMs={nowMs}
+          />
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Phase 1 freeze ETAs (1 month / 1 week / 1 day) are emailed to the
-          configured Super Admin fallback list from GitHub Actions. This page
-          does not call Motoko and cannot wipe installers. Do not reinstall the
+          Freeze at is <code>dd/mm/yy hh:mm:ss</code> UTC. Remaining is{" "}
+          <code>DDDd HH:mm:ss</code> and ticks while this page is open. Clocks
+          come from the dfx sentinel snapshot, not Motoko. Do not reinstall the
           backend to “fix” cycles.
         </p>
       </CardContent>

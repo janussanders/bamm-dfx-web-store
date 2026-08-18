@@ -7,6 +7,8 @@ import {
   assertPinnedDfxIds,
   bandFromDaysToFreeze,
   evaluateStoreSnapshot,
+  formatDdMmYyHhMmSsUtc,
+  formatRemainingClock,
   memoryDailyBurn,
   parseCanisterStatusText,
   parseCyclesBalanceOutput,
@@ -88,7 +90,20 @@ const snap = evaluateStoreSnapshot({
 assert.ok(snap.dailyBurn > 0);
 assert.ok(["idle", "memory", "observed"].includes(snap.winner));
 assert.equal(typeof snap.etaFreeze, "string");
+assert.equal(typeof snap.etaFreezeAt, "string");
+assert.ok(snap.etaFreezeAt.startsWith("2026-"));
 assert.equal(snap.backendStopped, false);
+
+assert.equal(
+  formatDdMmYyHhMmSsUtc("2026-09-17T14:30:00.000Z"),
+  "17/09/26 14:30:00",
+);
+assert.equal(formatRemainingClock(0), "000d 00:00:00");
+assert.equal(formatRemainingClock(-5), "000d 00:00:00");
+assert.equal(
+  formatRemainingClock((29 * 86400 + 4 * 3600 + 12 * 60 + 33) * 1000),
+  "029d 04:12:33",
+);
 
 const topupIgnored = evaluateStoreSnapshot({
   backend: {

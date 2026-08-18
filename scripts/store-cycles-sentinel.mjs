@@ -22,6 +22,7 @@ import {
   assertPinnedDfxIds,
   bandLabel,
   evaluateStoreSnapshot,
+  buildPublicCyclesHealth,
   formatT,
   parseCanisterStatusText,
   parseCyclesBalanceOutput,
@@ -33,6 +34,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const STATE_PATH =
   process.env.CYCLE_SENTINEL_STATE ||
   join(ROOT, ".cache", "store-cycles-sentinel.json");
+const HEALTH_PATH =
+  process.env.CYCLE_HEALTH_PATH ||
+  join(ROOT, ".cache", "cycles-health.json");
 const SUMMARY_PATH = process.env.GITHUB_STEP_SUMMARY;
 
 assertNoDestructiveDfxArgs(process.argv);
@@ -251,6 +255,8 @@ async function main() {
     band: effectiveBand,
     etaFreeze: evalResult.etaFreeze,
     etaZero: evalResult.etaZero,
+    etaFreezeAt: evalResult.etaFreezeAt,
+    etaZeroAt: evalResult.etaZeroAt,
     lastNotifiedBand: bandDecision.lastNotifiedBand,
     ciLedgerAlertOpen: ciLow,
     backendStopped: evalResult.backendStopped,
@@ -312,6 +318,23 @@ async function main() {
 
   saveState(snapshot);
 
+  const health = buildPublicCyclesHealth({
+    backendId,
+    frontendId,
+    backend,
+    frontend,
+    evalResult,
+    nowMs,
+    band: effectiveBand,
+  });
+  mkdirSync(dirname(HEALTH_PATH), { recursive: true });
+  writeFileSync(HEALTH_PATH, `${JSON.stringify(health, null, 2)}\n`);
+  mkdirSync(join(ROOT, "ops"), { recursive: true });
+  writeFileSync(
+    join(ROOT, "ops", "cycles-health.json"),
+    `${JSON.stringify(health, null, 2)}\n`,
+  );
+
   const md = [
     "## Dfx store cycles sentinel (DDR-043 Phase 1)",
     "",
@@ -322,7 +345,7 @@ async function main() {
     `- **CI ledger:** ${formatT(ciLedger)}`,
     `- **Daily burn:** ${formatT(evalResult.dailyBurn)} (${evalResult.winner})`,
     `- **Days to freeze:** ${Number.isFinite(evalResult.daysToFreeze) ? evalResult.daysToFreeze.toFixed(1) : "unknown"} → **${evalResult.band}**`,
-    `- **ETA freeze:** ${evalResult.etaFreeze} · **ETA zero:** ${evalResult.etaZero}`,
+    `- **ETA freeze:** ${evalResult.etaFreezeAt || evalResult.etaFreeze} · **ETA zero:** ${evalResult.etaZeroAt || evalResult.etaZero}`,
     `- **Alerts sent:** ${mails.length} (${emails.length} recipient(s))`,
     `- **NNS:** ${TARGETS.nnsAccountsUrl}`,
     `- **Store:** ${TARGETS.storeUrl}`,

@@ -123,6 +123,8 @@ Canister balances (backend + frontend) are **not** the same pool as this CI ledg
 
 **Phase 1 workflow (dfx store only — never Caffeine `nae7q-…`, never deploy/reinstall):** GitHub → Actions → **Store cycles sentinel**. Status-only: `dfx canister status` + `dfx cycles balance`. Does **not** create canisters or upload wasm, so `.dmg` / `.exe` on `5z2v5-…` stay intact.
 
+Admin remaining clocks ([DDR-044](../DDR/DDR-044-Admin-Cycles-Remaining-Clocks.md)): the sentinel force-updates branch `cycles-health` with `ops/cycles-health.json` (JSON only). That is not a canister deploy.
+
 Secrets: `DFX_IDENTITY_PEM` (existing), `RESEND_API_KEY`, `CYCLE_ALERT_FALLBACK_EMAILS` (comma-separated Super Admin inboxes until Phase 2 reads `adminRecords`).
 
 Replenish path in those emails:

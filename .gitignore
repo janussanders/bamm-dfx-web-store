@@ -10,6 +10,7 @@ frontend/public/assets/*.png
 .platform/
 .pnpm-store/
 .cache/
+ops/cycles-health.json
 .caffeine-release-*-notes.md
 .dfx/
 # canister_ids.json is committed to pin IC IDs for the dfx parallel path
