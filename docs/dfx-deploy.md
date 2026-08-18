@@ -1,6 +1,6 @@
 # Dfx deploy & agentic URL
 
-**Related:** [DDR-003](../DDR/DDR-003-Dfx-Object-Storage-Replacement.md), [DDR-004](../DDR/DDR-004-Dfx-CI-Deploy-Agentic-URL.md), [DDR-005](../DDR/DDR-005-Dfx-Chunked-Installer-Upload.md), [DDR-006](../DDR/DDR-006-Dfx-EOP-Actor-Field-Append-Order.md), [DDR-007](../DDR/DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md), [DDR-008](../DDR/DDR-008-Dfx-Primary-Caffeine-Backup.md), [DDR-009](../DDR/DDR-009-Custom-Domain-Bammservice.md), [DDR-010](../DDR/DDR-010-Email-Banner-Resend-Status.md)
+**Related:** [DDR-003](../DDR/DDR-003-Dfx-Object-Storage-Replacement.md), [DDR-004](../DDR/DDR-004-Dfx-CI-Deploy-Agentic-URL.md), [DDR-005](../DDR/DDR-005-Dfx-Chunked-Installer-Upload.md), [DDR-006](../DDR/DDR-006-Dfx-EOP-Actor-Field-Append-Order.md), [DDR-007](../DDR/DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md), [DDR-008](../DDR/DDR-008-Dfx-Primary-Caffeine-Backup.md), [DDR-009](../DDR/DDR-009-Custom-Domain-Bammservice.md), [DDR-010](../DDR/DDR-010-Email-Banner-Resend-Status.md), [DDR-043](../DDR/DDR-043-Store-Cycles-Expiry-Alerts.md)
 
 ## Failure map
 
@@ -9,6 +9,7 @@
 | Installer upload bar → 100%, nothing stored | [DDR-005](../DDR/DDR-005-Dfx-Chunked-Installer-Upload.md) |
 | `Memory-incompatible program upgrade` (IC0503) on backend | [DDR-006](../DDR/DDR-006-Dfx-EOP-Actor-Field-Append-Order.md) + [DDR-038](../DDR/DDR-038-Dfx-IC0503-Deploy-Decision-Tree.md) |
 | Keyring hang, cycles, pnpm/vite deploy, no admin after II | [DDR-007](../DDR/DDR-007-Dfx-CI-Identity-Cycles-Deploy-Pitfalls.md) |
+| Store/canister out of cycles; 1 mo / 1 wk / 1 day Super Admin freeze mail | [DDR-043](../DDR/DDR-043-Store-Cycles-Expiry-Alerts.md) |
 
 ## Deploy target cheat sheet (agents)
 

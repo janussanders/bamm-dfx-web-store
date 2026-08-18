@@ -1,0 +1,117 @@
+name: Store cycles sentinel
+
+# DDR-043 Phase 1 — dfx store only (https://store.bammservice.com).
+# Status + optional RESEND alerts. Caffeine nae7q-… is retired and is never called.
+#
+# FORBIDDEN (would wipe or mutate store artifacts / Motoko heap):
+#   dfx deploy · dfx canister install · --mode reinstall · dfx canister create
+#   dfx cycles top-up · any Caffeine canister
+# .dmg / .exe stay on backend 5z2v5-…; this job only runs `dfx canister status`
+# and `dfx cycles balance`.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      send_alerts:
+        description: "Send RESEND emails if a 1mo/1wk/1d (or CI ledger) threshold is crossed"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: store-cycles-sentinel
+  cancel-in-progress: false
+
+jobs:
+  sentinel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Unit test remaining-time math
+        run: node scripts/store-cycles-sentinel.test.mjs
+
+      - name: Restore sentinel state
+        uses: actions/cache@v4
+        with:
+          path: .cache/store-cycles-sentinel.json
+          key: store-cycles-sentinel-state-${{ github.run_id }}
+          restore-keys: |
+            store-cycles-sentinel-state-
+
+      - name: Install dfx
+        env:
+          DFXVM_INIT_YES: "true"
+        run: |
+          set -euo pipefail
+          sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+          echo "$HOME/.local/share/dfx/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/share/dfx/bin:$PATH"
+          dfx --version
+
+      - name: Import CI identity (status only)
+        env:
+          DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
+          DFX_WARNING: "-mainnet_plaintext_identity"
+          DFX_TELEMETRY_DISABLED: "1"
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/share/dfx/bin:$PATH"
+          if [ -z "${DFX_IDENTITY_PEM:-}" ]; then
+            echo "::error::DFX_IDENTITY_PEM is required to read canister_status (controller)"
+            exit 1
+          fi
+          mkdir -p "$HOME/.config/dfx/identity/ci"
+          printf '%s\n' "$DFX_IDENTITY_PEM" > "$HOME/.config/dfx/identity/ci/identity.pem"
+          chmod 600 "$HOME/.config/dfx/identity/ci/identity.pem"
+          printf '%s\n' '{"hsm":null,"encryption":null,"keyring_identity_suffix":null}' \
+            > "$HOME/.config/dfx/identity/ci/identity.json"
+          dfx identity use ci
+          dfx identity get-principal
+          BACKEND=$(python3 -c "import json; print(json.load(open('canister_ids.json'))['backend']['ic'])")
+          FRONTEND=$(python3 -c "import json; print(json.load(open('canister_ids.json'))['frontend']['ic'])")
+          echo "backend=$BACKEND"
+          echo "frontend=$FRONTEND"
+          if [ "$BACKEND" = "nae7q-yaaaa-aaaai-atnvq-cai" ] || [ "$FRONTEND" = "nae7q-yaaaa-aaaai-atnvq-cai" ]; then
+            echo "::error::Caffeine canister id in canister_ids.json — abort (retired)"
+            exit 1
+          fi
+          if [ "$BACKEND" != "5z2v5-uqaaa-aaaao-bbeaq-cai" ] || [ "$FRONTEND" != "5xyyv-paaaa-aaaao-bbebq-cai" ]; then
+            echo "::error::canister_ids.json is not the live dfx store — abort to avoid touching the wrong canisters"
+            exit 1
+          fi
+
+      - name: Collect status and maybe alert
+        env:
+          DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM: ${{ secrets.RESEND_FROM }}
+          CYCLE_ALERT_FALLBACK_EMAILS: ${{ secrets.CYCLE_ALERT_FALLBACK_EMAILS }}
+          DFX_NETWORK: ic
+          DFX_IDENTITY: ci
+          DFX_WARNING: "-mainnet_plaintext_identity"
+          DFX_TELEMETRY_DISABLED: "1"
+          CYCLE_SENTINEL_SEND_ALERTS: ${{ github.event_name == 'workflow_dispatch' && inputs.send_alerts == false && '0' || '1' }}
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/share/dfx/bin:$PATH"
+          node scripts/store-cycles-sentinel.mjs
+
+      - name: Upload snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-cycles-sentinel-${{ github.run_id }}
+          path: .cache/store-cycles-sentinel.json
+          if-no-files-found: ignore

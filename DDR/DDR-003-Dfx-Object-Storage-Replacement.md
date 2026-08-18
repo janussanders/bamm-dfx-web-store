@@ -46,7 +46,7 @@ Frontend helper: `src/frontend/src/lib/chunkedInstaller.ts`.
 
 ### Still open
 
-- Document cycle cost / memory for ~250 MiB of installers on the backend canister
+- Document cycle cost / memory for ~250 MiB of installers on the backend canister — remaining-time alerts: [DDR-043](DDR-043-Store-Cycles-Expiry-Alerts.md)
 - Optional later: move binaries to asset canister (Option B) if heap/cycles become painful
 
 ## Spike exit criteria

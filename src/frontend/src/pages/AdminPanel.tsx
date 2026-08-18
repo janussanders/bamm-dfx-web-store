@@ -117,6 +117,7 @@ import { toast } from "sonner";
 import BundleManagementPanel from "../components/BundleManagementPanel";
 import EntitlementRegistryPanel from "../components/EntitlementRegistryPanel";
 import LicenseGenerationPanel from "../components/LicenseGenerationPanel";
+import NnsCyclesStatusCard from "../components/NnsCyclesStatusCard";
 import TransactionModal from "../components/TransactionModal";
 import type { TransactionLog } from "../components/TransactionModal";
 import {
@@ -3832,6 +3833,8 @@ export default function AdminPanel() {
                 claimCode={claimCodeData as string | undefined}
               />
             )}
+
+            {isAdministratorOrAbove && <NnsCyclesStatusCard />}
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">

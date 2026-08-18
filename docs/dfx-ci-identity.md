@@ -1,7 +1,7 @@
 # Dfx CI identity — secret setup & funding
 
 **Script:** [`scripts/setup-dfx-ci-secret.sh`](../scripts/setup-dfx-ci-secret.sh)  
-**Related:** [dfx-deploy.md](dfx-deploy.md), [DDR-004](../DDR/DDR-004-Dfx-CI-Deploy-Agentic-URL.md)
+**Related:** [dfx-deploy.md](dfx-deploy.md), [DDR-004](../DDR/DDR-004-Dfx-CI-Deploy-Agentic-URL.md), [DDR-043](../DDR/DDR-043-Store-Cycles-Expiry-Alerts.md) (store cycle remaining-time alerts)
 
 ## Where the PEM lives (safe, build-safe)
 
@@ -116,6 +116,20 @@ Re-run Actions **Deploy dfx (IC)** with `deploy=true` (frontend canister was del
 ### Option C — Developer faucet (limited / may not suit production CI)
 
 DFINITY sometimes offers a cycles faucet for developers. Prefer Option A for a durable CI identity.
+
+## Remaining-time alerts (store freeze)
+
+Canister balances (backend + frontend) are **not** the same pool as this CI ledger. The store sentinel ([DDR-043](../DDR/DDR-043-Store-Cycles-Expiry-Alerts.md)) emails Super Admins at 1 month / 1 week / 1 day **before freeze**, using running memory + `idle_cycles_burned_per_day`.
+
+**Phase 1 workflow (dfx store only — never Caffeine `nae7q-…`, never deploy/reinstall):** GitHub → Actions → **Store cycles sentinel**. Status-only: `dfx canister status` + `dfx cycles balance`. Does **not** create canisters or upload wasm, so `.dmg` / `.exe` on `5z2v5-…` stay intact.
+
+Secrets: `DFX_IDENTITY_PEM` (existing), `RESEND_API_KEY`, `CYCLE_ALERT_FALLBACK_EMAILS` (comma-separated Super Admin inboxes until Phase 2 reads `adminRecords`).
+
+Replenish path in those emails:
+
+1. [NNS accounts](https://nns.internetcomputer.org/accounts) → send ICP to the CI account ID above
+2. Convert + `dfx cycles top-up` backend **and** frontend
+3. Confirm the store: https://store.bammservice.com/
 
 ## After funding
 

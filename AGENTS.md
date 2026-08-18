@@ -16,7 +16,8 @@ Read:
 3. [DDR-003](DDR/DDR-003-Dfx-Object-Storage-Replacement.md)  
 4. [DDR-004](DDR/DDR-004-Dfx-CI-Deploy-Agentic-URL.md)  
 5. [DDR-006](DDR/DDR-006-Dfx-EOP-Actor-Field-Append-Order.md) + [DDR-038](DDR/DDR-038-Dfx-IC0503-Deploy-Decision-Tree.md) — **IC0503 / deploy targets**  
-6. [docs/dfx-deploy.md](docs/dfx-deploy.md)
+6. [docs/dfx-deploy.md](docs/dfx-deploy.md)  
+7. [DDR-043](DDR/DDR-043-Store-Cycles-Expiry-Alerts.md) — cycles remaining-time + Super Admin freeze emails (NNS → GitHub ICP)
 
 ## Deploy rules (IC0503)
 
