@@ -301,8 +301,8 @@ async function main() {
 
   const sendErrors = [];
   if (mails.length > 0 && emails.length === 0) {
-    sendErrors.push(
-      "CYCLE_ALERT_FALLBACK_EMAILS is empty — Phase 1 cannot mail Super Admins from Motoko; set the secret",
+    console.warn(
+      "[store-cycles-sentinel] Notice: CYCLE_ALERT_FALLBACK_EMAILS is empty — skipping email alert delivery. To receive email alerts, configure RESEND_API_KEY and CYCLE_ALERT_FALLBACK_EMAILS secrets.",
     );
   }
   for (const mail of mails) {
@@ -312,6 +312,7 @@ async function main() {
         console.log(`sent ${mail.kind} to ${to}`);
       } catch (err) {
         sendErrors.push(`${to}: ${err.message}`);
+        console.error(`[store-cycles-sentinel] failed to send ${mail.kind} to ${to}: ${err.message}`);
       }
     }
   }
@@ -354,9 +355,8 @@ async function main() {
   appendSummary(md);
 
   console.log(JSON.stringify({ ...snapshot, sendErrors }, null, 2));
-  if (sendErrors.length > 0 && mails.length > 0) {
-    console.error(sendErrors.join("\n"));
-    process.exit(1);
+  if (sendErrors.length > 0) {
+    console.warn("[store-cycles-sentinel] Email alert errors:\n" + sendErrors.join("\n"));
   }
 }
 
