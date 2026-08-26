@@ -8,16 +8,19 @@ name: Store cycles sentinel
 #   dfx cycles top-up · any Caffeine canister
 # .dmg / .exe stay on backend 5z2v5-…; this job only runs `dfx canister status`
 # and `dfx cycles balance`.
+#
+# NOTE: Automated cron is disabled — the sentinel runs natively on-canister via Motoko and Resend.
+# Manual trigger remains available via workflow_dispatch for testing if needed.
 
 on:
-  schedule:
-    - cron: "0 */6 * * *"
+  # schedule:
+  #   - cron: "0 */6 * * *"
   workflow_dispatch:
     inputs:
       send_alerts:
         description: "Send RESEND emails if a 1mo/1wk/1d (or CI ledger) threshold is crossed"
         required: true
-        default: true
+        default: false
         type: boolean
 
 permissions:

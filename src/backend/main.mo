@@ -20,6 +20,8 @@ import Set "mo:core/Set";
 import Float "mo:core/Float";
 import Iter "mo:core/Iter";
 import Blob "mo:core/Blob";
+import ExperimentalCycles "mo:base/ExperimentalCycles";
+import Timer "mo:base/Timer";
 
 import LicenseSigner "LicenseSigner";
 import EntitlementMigration "EntitlementMigration";
@@ -3510,6 +3512,14 @@ actor BAMM {
   var windowsUploadReceived : Nat = 0;
   var windowsUploadChunks = Map.empty<Nat, Blob>();
 
+  // ── In-Canister Cycles Sentinel (DDR-043 Native Sentinel) ─────────────────
+  // Tracks cycles on-canister, monitors remaining-time bands (#none, #month, #week, #day),
+  // and sends Resend email notifications directly to each active Super Admin in adminRecords.
+  var cycleSentinelLastTimestampNs : Int = 0;
+  var cycleSentinelLastBalance : Nat = 0;
+  var cycleSentinelLastNotifiedBand : Text = "none";
+  var cycleSentinelAlertSentCount : Nat = 0;
+
   func isExcludedFromTrial(name : Text) : Bool {
     trialExcludedFeatures.contains(name);
   };
@@ -5275,6 +5285,146 @@ actor BAMM {
       };
       privateKeyPresent = privateKeyConfigured();
     };
+  };
+
+  // ── In-Canister Cycles Sentinel Logic (DDR-043) ───────────────────────────
+
+  func getDaysToFreezeEstimate(balance : Nat) : Nat {
+    // Application-subnet memory & idle burn baseline (~40B cycles/day for ~250MB heap)
+    let dailyBurnBaseline : Nat = 40_000_000_000;
+    let daysToZero = balance / dailyBurnBaseline;
+    // Headroom before freeze threshold (~30 days idle reserve)
+    if (daysToZero > 30) {
+      daysToZero - 30;
+    } else {
+      0;
+    };
+  };
+
+  func computeCycleBand(daysToFreeze : Nat) : Text {
+    if (daysToFreeze > 30) {
+      "none";
+    } else if (daysToFreeze > 7) {
+      "month";
+    } else if (daysToFreeze > 1) {
+      "week";
+    } else {
+      "day";
+    };
+  };
+
+  func formatCyclesInTrillions(c : Nat) : Text {
+    let tWhole = c / 1_000_000_000_000;
+    let tFrac = (c % 1_000_000_000_000) / 10_000_000_000; // 2 decimal digits
+    Nat.toText(tWhole) # "." # (if (tFrac < 10) { "0" # Nat.toText(tFrac) } else { Nat.toText(tFrac) }) # " T";
+  };
+
+  func buildCycleAlertHtml(band : Text, currentCycles : Nat, daysToFreeze : Nat) : Text {
+    let bandName = switch (band) {
+      case "month" { "1 Month"; };
+      case "week"  { "1 Week"; };
+      case "day"   { "1 Day"; };
+      case _       { "Urgent"; };
+    };
+    let cyclesFormatted = formatCyclesInTrillions(currentCycles);
+
+    "<!DOCTYPE html>" #
+    "<html><head><meta charset=\"UTF-8\"/><style>" #
+    "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: #1e293b; max-width: 600px; margin: 0 auto; padding: 20px; }" #
+    ".card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }" #
+    ".alert-badge { display: inline-block; background: #ef4444; color: #ffffff; padding: 4px 12px; border-radius: 9999px; font-weight: 700; font-size: 13px; margin-bottom: 12px; }" #
+    ".stat-row { display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding: 8px 0; }" #
+    ".btn { display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; margin-top: 15px; }" #
+    "code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; }" #
+    "</style></head><body>" #
+    "<div class=\"card\">" #
+    "<div class=\"alert-badge\">ACTION REQUIRED: " # bandName # " of Cycles Remaining</div>" #
+    "<h2 style=\"margin-top:0;\">BAMM Store Canister Cycle Balance Alert</h2>" #
+    "<p>The BAMM Store backend canister (<code>5z2v5-uqaaa-aaaao-bbeaq-cai</code>) is running low on cycles and is estimated to freeze in approximately <strong>" # Nat.toText(daysToFreeze) # " days</strong>.</p>" #
+    "<div style=\"margin: 15px 0;\">" #
+    "<div class=\"stat-row\"><span>Current Balance:</span><strong>" # cyclesFormatted # " (" # Nat.toText(currentCycles) # " cycles)</strong></div>" #
+    "<div class=\"stat-row\"><span>Estimated Days to Freeze:</span><strong>~" # Nat.toText(daysToFreeze) # " days</strong></div>" #
+    "<div class=\"stat-row\"><span>Target Store:</span><a href=\"https://store.bammservice.com\">https://store.bammservice.com</a></div>" #
+    "<div class=\"stat-row\"><span>CI Account ID (send target):</span><code>b2986df0bfef35a077a8d162726433b5a8d852d01cfa9352044c3c38e7dce98e</code></div>" #
+    "</div>" #
+    "<h3>How to Replenish:</h3>" #
+    "<ol>" #
+    "<li>Open <a href=\"https://nns.internetcomputer.org/accounts\">NNS Accounts</a> and send ICP to the CI account ID above.</li>" #
+    "<li>Run: <code>dfx cycles convert --amount &lt;ICP&gt; --network ic</code></li>" #
+    "<li>Run: <code>dfx cycles top-up backend &lt;cycles&gt; --network ic</code> and <code>dfx cycles top-up frontend &lt;cycles&gt; --network ic</code></li>" #
+    "</ol>" #
+    "<p style=\"font-size:12px; color:#64748b;\">This automated alert was dispatched natively by the BAMM Store Canister Sentinel via Resend.</p>" #
+    "</div>" #
+    "</body></html>";
+  };
+
+  func checkInCanisterCyclesSentinelInternal() : async () {
+    let now = Time.now();
+    let balance = ExperimentalCycles.balance();
+    let daysToFreeze = getDaysToFreezeEstimate(balance);
+    let band = computeCycleBand(daysToFreeze);
+
+    // If balance recovered above 30 days after a topup, reset notified band
+    if (band == "none" and cycleSentinelLastNotifiedBand != "none") {
+      cycleSentinelLastNotifiedBand := "none";
+    };
+
+    // If we crossed into a new warning band (#month, #week, #day), notify each active Super Admin
+    if (band != "none" and band != cycleSentinelLastNotifiedBand) {
+      let subject = "[BAMM Store Alert] " # (if (band == "month") { "1 Month" } else if (band == "week") { "1 Week" } else { "1 Day" }) # " of cycles remaining";
+      let htmlBody = buildCycleAlertHtml(band, balance, daysToFreeze);
+
+      for ((_email, record) in adminRecords.entries()) {
+        if (record.role == #superAdmin and record.status == #active and record.email.contains(#char '@')) {
+          let _ = await sendPlainEmailWithResend(record.email, subject, htmlBody);
+          cycleSentinelAlertSentCount += 1;
+        };
+      };
+
+      cycleSentinelLastNotifiedBand := band;
+    };
+
+    cycleSentinelLastTimestampNs := now;
+    cycleSentinelLastBalance := balance;
+  };
+
+  // Run cycle check periodically every 6 hours
+  let cycleSentinelTimer = Timer.recurringTimer<system>(
+    21_600_000_000_000,
+    func() : async () {
+      await checkInCanisterCyclesSentinelInternal();
+    }
+  );
+
+  // ── In-Canister Cycles Sentinel Public Endpoints ─────────────────────────
+
+  public query ({ caller }) func getInCanisterCycleHealth() : async {
+    currentCycles : Nat;
+    estimatedDaysToFreeze : Nat;
+    currentBand : Text;
+    lastNotifiedBand : Text;
+    lastCheckedTimestampNs : Int;
+    alertSentCount : Nat;
+  } {
+    let balance = ExperimentalCycles.balance();
+    let daysToFreeze = getDaysToFreezeEstimate(balance);
+    let band = computeCycleBand(daysToFreeze);
+    {
+      currentCycles = balance;
+      estimatedDaysToFreeze = daysToFreeze;
+      currentBand = band;
+      lastNotifiedBand = cycleSentinelLastNotifiedBand;
+      lastCheckedTimestampNs = cycleSentinelLastTimestampNs;
+      alertSentCount = cycleSentinelAlertSentCount;
+    };
+  };
+
+  public shared ({ caller }) func triggerInCanisterCycleCheck() : async Text {
+    if (not (isAdmin(caller))) {
+      Runtime.trap("Unauthorized: Only admins can trigger cycle check");
+    };
+    await checkInCanisterCyclesSentinelInternal();
+    "Cycle sentinel check completed. Balance: " # Nat.toText(ExperimentalCycles.balance()) # " cycles. Band: " # cycleSentinelLastNotifiedBand;
   };
 };
 

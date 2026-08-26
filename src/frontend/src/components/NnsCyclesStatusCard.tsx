@@ -54,7 +54,7 @@ function useCyclesHealth() {
           const json = (await res.json()) as CyclesHealthV1;
           if (json.backendId !== DFX_STORE_TARGETS.backendCanisterId) continue;
           if (json.frontendId !== DFX_STORE_TARGETS.frontendCanisterId) continue;
-          if (json.backendId === DFX_STORE_TARGETS.caffeineBackendForbidden) {
+          if ((json.backendId as string) === DFX_STORE_TARGETS.caffeineBackendForbidden) {
             continue;
           }
           if (!cancelled) {
